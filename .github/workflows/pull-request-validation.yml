@@ -1,0 +1,112 @@
+name: Pull Request Validation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  id-token: write # This is required for Az CLI Login
+  contents: read # This is required for actions/checkout
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: "Checkout Repository"
+      uses: actions/checkout@v6
+
+    - name: "Dependency Review"
+      uses: actions/dependency-review-action@v4
+
+  dotnet-func-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - uses: frasermolyneux/actions/dotnet-func-ci@main
+      with:
+        dotnet-project: "sitewatch-func"
+        dotnet-version: 9.0.x
+        src-folder: "src"
+
+  terraform-plan-and-apply-dev:
+    environment: Development
+    runs-on: ubuntu-latest
+
+    concurrency: # Prevent concurrent state access
+      group: ${{ github.repository }}-dev
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - uses: frasermolyneux/actions/terraform-plan-and-apply@main
+      with:
+        terraform-folder: "terraform"
+        terraform-var-file: "tfvars/dev.tfvars"
+        terraform-backend-file: "backends/dev.backend.hcl"
+        AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+        AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+        AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+    - id: terraform-output
+      shell: bash
+      run: |
+        cd terraform
+        echo "func_apps=$(terraform output -json func_apps)" >> $GITHUB_OUTPUT
+      env:
+        ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+        ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+        ARM_USE_AZUREAD: true
+        ARM_USE_OIDC: true
+
+    outputs:
+      func_apps: ${{ steps.terraform-output.outputs.func_apps }}
+
+  function-app-deploy-dev:
+    environment: Development
+    runs-on: ubuntu-latest
+    needs: [dotnet-func-ci, terraform-plan-and-apply-dev]
+
+    strategy:
+      matrix:
+        func_app: ${{ fromJSON(needs.terraform-plan-and-apply-dev.outputs.func_apps) }}
+
+    concurrency: # Prevent concurrent deployments
+      group: ${{ github.repository }}-dev
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - uses: frasermolyneux/actions/deploy-function-app@main
+      with:
+        function-app-artifact-name: "sitewatch-func"
+        function-app-name: ${{ matrix.func_app.name }}
+        AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+        AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+        AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+  terraform-plan-prd:
+    if: github.actor != 'dependabot[bot]' # dependabot context has no permissions to prod so skip this check
+    environment: Production
+    runs-on: ubuntu-latest
+    needs: [function-app-deploy-dev]
+
+    concurrency: # Prevent concurrent state access
+      group: ${{ github.repository }}-prd
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - uses: frasermolyneux/actions/terraform-plan@main
+      with:
+        terraform-folder: "terraform"
+        terraform-var-file: "tfvars/prd.tfvars"
+        terraform-backend-file: "backends/prd.backend.hcl"
+        AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+        AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+        AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
