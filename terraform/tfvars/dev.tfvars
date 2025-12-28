@@ -106,7 +106,7 @@ availability_tests = [
 ]
 
 app_service_plan = {
-  sku = "Y1"
+  sku = "FC1"
 }
 
 platform_monitoring_state = {
