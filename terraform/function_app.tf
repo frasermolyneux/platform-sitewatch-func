@@ -15,7 +15,7 @@ resource "azurerm_function_app_flex_consumption" "app" {
 
   runtime_name           = "dotnet-isolated"
   runtime_version        = "10.0"
-  maximum_instance_count = 1
+  maximum_instance_count = 40
 
   https_only                    = true
   public_network_access_enabled = false
