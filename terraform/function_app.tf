@@ -18,7 +18,7 @@ resource "azurerm_function_app_flex_consumption" "app" {
   maximum_instance_count = 40
 
   https_only                    = true
-  public_network_access_enabled = false
+  public_network_access_enabled = true
 
   identity {
     type = "SystemAssigned"
