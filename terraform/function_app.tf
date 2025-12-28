@@ -18,8 +18,8 @@ resource "azurerm_linux_function_app" "app" {
 
   service_plan_id = azurerm_service_plan.sp[each.value].id
 
-  storage_account_name       = azurerm_storage_account.function_app_storage[each.value].name
-  storage_account_access_key = azurerm_storage_account.function_app_storage[each.value].primary_access_key
+  storage_account_name          = azurerm_storage_account.function_app_storage[each.value].name
+  storage_uses_managed_identity = true
 
   https_only                    = true
   public_network_access_enabled = false
@@ -68,5 +68,13 @@ resource "azurerm_role_assignment" "app_to_keyvault" {
 
   scope                = azurerm_key_vault.kv.id
   role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_user_assigned_identity.app[each.value].principal_id
+}
+
+resource "azurerm_role_assignment" "app_to_storage_blob" {
+  for_each = toset(var.locations)
+
+  scope                = azurerm_storage_account.function_app_storage[each.value].id
+  role_definition_name = "Storage Blob Data Owner"
   principal_id         = azurerm_user_assigned_identity.app[each.value].principal_id
 }
