@@ -12,7 +12,7 @@
 			"type": "process",
 			"problemMatcher": "$msCompile",
 			"options": {
-				"cwd": "${workspaceFolder}/src\\sitewatch-func"
+				"cwd": "${workspaceFolder}/src\\MX.Platform.SiteWatch.App"
 			}
 		},
 		{
@@ -31,7 +31,7 @@
 			},
 			"problemMatcher": "$msCompile",
 			"options": {
-				"cwd": "${workspaceFolder}/src\\sitewatch-func"
+				"cwd": "${workspaceFolder}/src\\MX.Platform.SiteWatch.App"
 			}
 		},
 		{
@@ -47,7 +47,7 @@
 			"type": "process",
 			"problemMatcher": "$msCompile",
 			"options": {
-				"cwd": "${workspaceFolder}/src\\sitewatch-func"
+				"cwd": "${workspaceFolder}/src\\MX.Platform.SiteWatch.App"
 			}
 		},
 		{
@@ -64,14 +64,14 @@
 			"dependsOn": "clean release (functions)",
 			"problemMatcher": "$msCompile",
 			"options": {
-				"cwd": "${workspaceFolder}/src\\sitewatch-func"
+				"cwd": "${workspaceFolder}/src\\MX.Platform.SiteWatch.App"
 			}
 		},
 		{
 			"type": "func",
 			"dependsOn": "build (functions)",
 			"options": {
-				"cwd": "${workspaceFolder}/src\\sitewatch-func/bin/Debug/net10.0"
+				"cwd": "${workspaceFolder}/src\\MX.Platform.SiteWatch.App/bin/Debug/net10.0"
 			},
 			"command": "host start",
 			"isBackground": true,

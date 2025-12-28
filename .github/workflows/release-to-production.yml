@@ -24,7 +24,7 @@ jobs:
 
     - uses: frasermolyneux/actions/dotnet-func-ci@main
       with:
-        dotnet-project: "sitewatch-func"
+        dotnet-project: "MX.Platform.SiteWatch.App"
         dotnet-version: 10.0.x
         src-folder: "src"
         use-framework-output-root: true
@@ -77,7 +77,7 @@ jobs:
 
     - uses: frasermolyneux/actions/deploy-function-app@main
       with:
-        function-app-artifact-name: "sitewatch-func"
+        function-app-artifact-name: "MX.Platform.SiteWatch.App"
         function-app-name: ${{ matrix.func_app.name }}
         AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
         AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
@@ -132,7 +132,7 @@ jobs:
 
     - uses: frasermolyneux/actions/deploy-function-app@main
       with:
-        function-app-artifact-name: "sitewatch-func"
+        function-app-artifact-name: "MX.Platform.SiteWatch.App"
         function-app-name: ${{ matrix.func_app.name }}
         AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
         AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
