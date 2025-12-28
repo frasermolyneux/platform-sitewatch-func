@@ -46,6 +46,8 @@ resource "azurerm_linux_function_app" "app" {
   }
 
   app_settings = {
+    "WEBSITE_RUN_FROM_PACKAGE" = "0"
+
     "ApplicationInsightsAgent_EXTENSION_VERSION" = "~3"
 
     "default_appinsights_connection_string"     = azurerm_application_insights.ai[var.locations[0]].connection_string
@@ -60,6 +62,12 @@ resource "azurerm_linux_function_app" "app" {
 
     "APPINSIGHTS_PROFILERFEATURE_VERSION"  = "1.0.0"
     "DiagnosticServices_EXTENSION_VERSION" = "~3"
+  }
+
+  lifecycle {
+    ignore_changes = [
+      app_settings["WEBSITE_RUN_FROM_PACKAGE"] # Ignore changes to this property as it will be updated by the deployment pipeline
+    ]
   }
 }
 
