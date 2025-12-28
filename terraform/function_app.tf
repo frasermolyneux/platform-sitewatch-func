@@ -1,4 +1,4 @@
-resource "azurerm_function_app_flex_consumption" "app" {
+resource "azurerm_linux_function_app" "app" {
   for_each = toset(var.locations)
 
   name = format("fn-platform-sitewatch-func-%s-%s-%s", var.environment, each.value, random_id.environment_location_id[each.value].hex)
@@ -9,24 +9,28 @@ resource "azurerm_function_app_flex_consumption" "app" {
 
   service_plan_id = azurerm_service_plan.sp[each.value].id
 
-  storage_container_type      = "blobContainer"
-  storage_container_endpoint  = "${azurerm_storage_account.function_app_storage[each.value].primary_blob_endpoint}${azurerm_storage_container.function_app_container[each.value].name}"
-  storage_authentication_type = "SystemAssignedIdentity"
-
-  runtime_name           = "dotnet-isolated"
-  runtime_version        = "10.0"
-  maximum_instance_count = 40
+  storage_account_name          = azurerm_storage_account.function_app_storage[each.value].name
+  storage_uses_managed_identity = true
 
   https_only                    = true
   public_network_access_enabled = true
+
+  functions_extension_version = "~4"
 
   identity {
     type = "SystemAssigned"
   }
 
   site_config {
+    application_stack {
+      use_dotnet_isolated_runtime = true
+      dotnet_version              = "10.0"
+    }
+
     application_insights_connection_string = azurerm_application_insights.ai[each.value].connection_string
 
+    ftps_state          = "Disabled"
+    always_on           = false // Not possible with consumption tier
     minimum_tls_version = "1.2"
   }
 
@@ -41,6 +45,7 @@ resource "azurerm_function_app_flex_consumption" "app" {
 
     "xtremeidiots_forums_task_key" = format("@Microsoft.KeyVault(VaultName=%s;SecretName=%s)", azurerm_key_vault.kv.name, azurerm_key_vault_secret.xtremeidiots_forums_task_key.name)
 
+    // https://learn.microsoft.com/en-us/azure/azure-monitor/profiler/profiler-azure-functions#app-settings-for-enabling-profiler
     "APPINSIGHTS_PROFILERFEATURE_VERSION"  = "1.0.0"
     "DiagnosticServices_EXTENSION_VERSION" = "~3"
   }
@@ -51,7 +56,7 @@ resource "azurerm_role_assignment" "app_to_keyvault" {
 
   scope                = azurerm_key_vault.kv.id
   role_definition_name = "Key Vault Secrets User"
-  principal_id         = azurerm_function_app_flex_consumption.app[each.value].identity[0].principal_id
+  principal_id         = azurerm_linux_function_app.app[each.value].identity[0].principal_id
 }
 
 resource "azurerm_role_assignment" "app_to_storage_blob" {
@@ -59,5 +64,5 @@ resource "azurerm_role_assignment" "app_to_storage_blob" {
 
   scope                = azurerm_storage_account.function_app_storage[each.value].id
   role_definition_name = "Storage Blob Data Owner"
-  principal_id         = azurerm_function_app_flex_consumption.app[each.value].identity[0].principal_id
+  principal_id         = azurerm_linux_function_app.app[each.value].identity[0].principal_id
 }
