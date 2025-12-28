@@ -6,6 +6,10 @@
     "debug.internalConsoleOptions": "neverOpen",
     "azureFunctions.preDeployTask": "publish (functions)",
     "cSpell.words": [
-        "sitewatch"
+        "appinsights",
+        "geolocation",
+        "PROFILERFEATURE",
+        "sitewatch",
+        "xtremeidiots"
     ]
 }
