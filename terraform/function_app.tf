@@ -26,7 +26,6 @@ resource "azurerm_function_app_flex_consumption" "app" {
 
   site_config {
     application_insights_connection_string = azurerm_application_insights.ai[each.value].connection_string
-    application_insights_key               = azurerm_application_insights.ai[each.value].instrumentation_key
 
     minimum_tls_version = "1.2"
   }
