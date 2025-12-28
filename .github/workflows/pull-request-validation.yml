@@ -32,6 +32,7 @@ jobs:
         dotnet-project: "sitewatch-func"
         dotnet-version: 10.0.x
         src-folder: "src"
+        use-framework-output-root: true
 
   terraform-plan-and-apply-dev:
     environment: Development
