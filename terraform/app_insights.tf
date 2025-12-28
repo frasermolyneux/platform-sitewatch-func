@@ -13,10 +13,7 @@ resource "azurerm_application_insights" "ai" {
 
   daily_data_cap_in_gb = 1
   retention_in_days    = 30
-  sampling_percentage  = 50
-
-  internet_ingestion_enabled = false
-  internet_query_enabled     = false
+  sampling_percentage  = lookup(local.app_insights_sampling_percentage, var.environment, 25)
 
   tags = var.tags
 }
