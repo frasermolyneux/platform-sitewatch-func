@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>MX.Platform.SiteWatch.App</RootNamespace>
-    <UserSecretsId>b2dae35a-2e88-4a01-9a60-897cc3ef8bf9</UserSecretsId>
+    <UserSecretsId>b2dae35a-2e88-4a01-9a60-897cc3ef8bfe</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" Version="2.23.0" />
