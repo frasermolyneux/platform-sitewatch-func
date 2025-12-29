@@ -76,6 +76,7 @@ jobs:
       with:
         function-app-artifact-name: "MX.Platform.SiteWatch.App"
         function-app-name: ${{ matrix.func_app.name }}
+        function-app-resource-group: ${{ matrix.func_app.resource_group_name }}
         AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
         AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
         AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
