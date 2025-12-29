@@ -27,7 +27,6 @@ jobs:
         dotnet-project: "MX.Platform.SiteWatch.App"
         dotnet-version: 10.0.x
         src-folder: "src"
-        use-framework-output-root: true
 
   terraform-plan-and-apply-dev:
     environment: Development
