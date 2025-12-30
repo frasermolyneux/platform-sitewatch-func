@@ -50,6 +50,13 @@ resource "azurerm_linux_function_app" "app" {
     "APPINSIGHTS_PROFILERFEATURE_VERSION"  = "1.0.0"
     "DiagnosticServices_EXTENSION_VERSION" = "~3"
   }
+
+  lifecycle {
+    ignore_changes = [
+      app_settings["WEBSITE_ENABLE_SYNC_UPDATE_SITE"],
+      app_settings["WEBSITE_RUN_FROM_PACKAGE"],
+    ]
+  }
 }
 
 resource "azurerm_role_assignment" "app_to_keyvault" {
