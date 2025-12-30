@@ -3,7 +3,7 @@ resource "azurerm_monitor_metric_alert" "availability" {
 
   name = "${each.value.workload}-${each.value.environment} - ${each.key} - availability"
 
-  resource_group_name = azurerm_resource_group.rg[var.locations[0]].name
+  resource_group_name = format("rg-platform-sitewatch-func-%s-%s", var.environment, var.locations[0])
   scopes              = [local.app_insights_map[each.value.app_insights].id]
 
   description = "Availability test for ${each.key}"
