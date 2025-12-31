@@ -1,8 +1,9 @@
 name: Destroy Development
 
 on:
+  workflow_dispatch:
   schedule:
-    - cron: "0 0 */3 * *"
+    - cron: "40 1 * * *"
 
 permissions:
   id-token: write # This is required for Az CLI Login
