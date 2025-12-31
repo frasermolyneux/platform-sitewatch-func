@@ -1,7 +1,7 @@
 locals {
   sitewatch_resource_groups = {
     for location in var.locations :
-    location => format("rg-platform-sitewatch-func-%s-%s", var.environment, lower(location))
+    location => data.terraform_remote_state.platform_workloads.outputs.workload_resource_groups[var.workload_name][var.environment].resource_groups[lower(location)].name
   }
 
   app_insights_sampling_percentage = {
@@ -10,11 +10,11 @@ locals {
   }
 
   action_group_map = {
-    0 = data.azurerm_monitor_action_group.critical
-    1 = data.azurerm_monitor_action_group.high
-    2 = data.azurerm_monitor_action_group.moderate
-    3 = data.azurerm_monitor_action_group.low
-    4 = data.azurerm_monitor_action_group.informational
+    0 = data.terraform_remote_state.platform_monitoring.outputs.monitor_action_groups.critical
+    1 = data.terraform_remote_state.platform_monitoring.outputs.monitor_action_groups.high
+    2 = data.terraform_remote_state.platform_monitoring.outputs.monitor_action_groups.moderate
+    3 = data.terraform_remote_state.platform_monitoring.outputs.monitor_action_groups.low
+    4 = data.terraform_remote_state.platform_monitoring.outputs.monitor_action_groups.informational
   }
 
   app_insights_map = {
