@@ -49,8 +49,8 @@ variable "app_service_plan" {
   })
 }
 
-variable "platform_monitoring_state" {
-  description = "Backend config for platform-monitoring remote state"
+variable "platform_workloads_state" {
+  description = "Backend config for platform-workloads remote state (used to read workload resource groups/backends)"
   type = object({
     resource_group_name  = string
     storage_account_name = string
@@ -61,8 +61,8 @@ variable "platform_monitoring_state" {
   })
 }
 
-variable "platform_workloads_state" {
-  description = "Backend config for platform-workloads remote state (used to read workload resource groups/backends)"
+variable "platform_monitoring_state" {
+  description = "Backend config for platform-monitoring remote state"
   type = object({
     resource_group_name  = string
     storage_account_name = string
