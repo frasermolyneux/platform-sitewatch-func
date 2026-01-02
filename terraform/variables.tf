@@ -39,7 +39,7 @@ variable "availability_tests" {
     app          = string
     app_insights = string
     uri          = string
-    severity     = number
+    severity     = string
   }))
 }
 

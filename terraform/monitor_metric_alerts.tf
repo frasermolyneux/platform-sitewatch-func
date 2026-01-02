@@ -3,7 +3,7 @@ resource "azurerm_monitor_metric_alert" "availability" {
 
   name = "${each.value.workload}-${each.value.environment} - ${each.key} - availability"
 
-  resource_group_name = local.workload_resource_groups[var.locations[0]]
+  resource_group_name = data.azurerm_resource_group.rg[var.locations[0]].name
   scopes              = [local.app_insights_map[each.value.app_insights].id]
 
   description = "Availability test for ${each.key}"
