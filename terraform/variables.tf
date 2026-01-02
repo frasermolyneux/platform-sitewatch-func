@@ -23,19 +23,13 @@ variable "subscriptions" {
 }
 
 variable "geolocation_app_insights" {
-  type = object({
-    subscription_id     = string
-    resource_group_name = string
-    name                = string
-  })
+  type    = object({ subscription_id = string, resource_group_name = string, name = string })
+  default = null
 }
 
 variable "portal_app_insights" {
-  type = object({
-    subscription_id     = string
-    resource_group_name = string
-    name                = string
-  })
+  type    = object({ subscription_id = string, resource_group_name = string, name = string })
+  default = null
 }
 
 variable "availability_tests" {
@@ -81,4 +75,10 @@ variable "platform_workloads_state" {
 
 variable "tags" {
   default = {}
+}
+
+variable "disable_external_checks" {
+  description = "When true, timer triggers will short-circuit and skip outbound availability checks."
+  type        = bool
+  default     = false
 }

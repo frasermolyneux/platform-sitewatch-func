@@ -6,6 +6,7 @@ using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Polly;
@@ -16,15 +17,17 @@ namespace MX.Platform.SitewatchFunc;
 public class ExternalHealthCheck
 {
     private readonly IConfiguration configuration;
+    private readonly IOptionsMonitor<SiteWatchOptions> optionsMonitor;
     private readonly TelemetryClient telemetryClient;
     public Dictionary<string, TelemetryClient> telemetryClients { get; set; } = new Dictionary<string, TelemetryClient>();
 
     private readonly AsyncRetryPolicy<HttpResponseMessage> retryPolicy;
 
-    public ExternalHealthCheck(IConfiguration configuration, TelemetryClient telemetryClient)
+    public ExternalHealthCheck(IConfiguration configuration, TelemetryClient telemetryClient, IOptionsMonitor<SiteWatchOptions> optionsMonitor)
     {
         this.configuration = configuration;
         this.telemetryClient = telemetryClient;
+        this.optionsMonitor = optionsMonitor;
 
         retryPolicy = Policy
             .Handle<HttpRequestException>()
@@ -46,21 +49,31 @@ public class ExternalHealthCheck
     [Function(nameof(ExternalHealthCheck))]
     public async Task Run([TimerTrigger("0,30 * * * * *")] TimerInfo timer, ILogger log, FunctionContext executionContext)
     {
-        var testConfigs = JsonConvert.DeserializeObject<List<TestConfig>>(configuration["test_config"]);
+        var options = optionsMonitor.CurrentValue;
+
+        if (options.DisableExternalChecks)
+        {
+            log.LogInformation("External checks disabled by configuration; skipping run.");
+            return;
+        }
+
+        var testConfigs = options.Tests ?? new List<TestConfig>();
+
+        if (testConfigs.Count == 0)
+        {
+            log.LogInformation("No availability tests configured; skipping run.");
+            return;
+        }
 
         foreach (var testConfig in testConfigs)
         {
-            if (!telemetryClients.ContainsKey(testConfig.AppInsights))
-            {
-                var telemetryConfiguration = new TelemetryConfiguration
-                {
-                    ConnectionString = configuration[$"{testConfig.AppInsights.ToLower()}_appinsights_connection_string"],
-                    TelemetryChannel = new InMemoryChannel()
-                };
-                telemetryClients.Add(testConfig.AppInsights, new TelemetryClient(telemetryConfiguration));
-            }
+            var telemetryClient = GetTelemetryClient(options, testConfig.AppInsights);
 
-            var telemetryClient = telemetryClients[testConfig.AppInsights];
+            if (telemetryClient == null)
+            {
+                log.LogWarning("No telemetry connection configured for app insights key '{AppInsights}'. Skipping test '{App}'.", testConfig.AppInsights, testConfig.App);
+                continue;
+            }
             string location = Environment.GetEnvironmentVariable("REGION_NAME") ?? "Unknown";
 
             var availability = new AvailabilityTelemetry
@@ -99,6 +112,33 @@ public class ExternalHealthCheck
             }
 
         }
+    }
+
+    private TelemetryClient? GetTelemetryClient(SiteWatchOptions options, string appInsightsKey)
+    {
+        var key = string.IsNullOrWhiteSpace(appInsightsKey) ? "default" : appInsightsKey;
+
+        if (!telemetryClients.TryGetValue(key, out var client))
+        {
+            if (!options.Telemetry.TryGetValue(key, out var connectionString))
+            {
+                if (!options.Telemetry.TryGetValue("default", out connectionString))
+                {
+                    return null;
+                }
+            }
+
+            var telemetryConfiguration = new TelemetryConfiguration
+            {
+                ConnectionString = connectionString,
+                TelemetryChannel = new InMemoryChannel()
+            };
+
+            client = new TelemetryClient(telemetryConfiguration);
+            telemetryClients.Add(key, client);
+        }
+
+        return client;
     }
 
     private async Task RunAvailabilityTestAsync(ILogger log, string uri)

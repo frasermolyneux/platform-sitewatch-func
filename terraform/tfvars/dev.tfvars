@@ -19,92 +19,30 @@ subscriptions = {
   }
 }
 
-geolocation_app_insights = {
-  subscription_id     = "d68448b0-9947-46d7-8771-baa331a3063a"
-  resource_group_name = "rg-geolocation-dev-uksouth-01"
-  name                = "ai-geolocation-dev-uksouth-01"
-}
+geolocation_app_insights = null
 
-portal_app_insights = {
-  subscription_id     = "d68448b0-9947-46d7-8771-baa331a3063a"
-  resource_group_name = "rg-portal-core-dev-uksouth-01"
-  name                = "ai-portal-core-dev-uksouth-01"
-}
+portal_app_insights = null
 
 availability_tests = [
   {
-    workload     = "portal-event-ingest"
+    workload     = "synthetic"
     environment  = "dev"
-    app          = "fn-portal-event-ingest-dev-uksouth-01-fafcb30ca7e0"
-    app_insights = "portal"
-    uri          = "https://fn-portal-event-ingest-dev-uksouth-01-fafcb30ca7e0.azurewebsites.net/api/health"
-    severity     = 4
-  },
-  {
-    workload     = "portal-repository-v1"
-    environment  = "dev"
-    app          = "app-portal-repo-dev-uksouth-v1-ebd9159c6051"
-    app_insights = "portal"
-    uri          = "https://app-portal-repo-dev-uksouth-v1-ebd9159c6051.azurewebsites.net/api/health"
-    severity     = 4
-  },
-  {
-    workload     = "portal-repository-v2"
-    environment  = "dev"
-    app          = "app-portal-repo-dev-uksouth-v2-ebd9159c6051"
-    app_insights = "portal"
-    uri          = "https://app-portal-repo-dev-uksouth-v2-ebd9159c6051.azurewebsites.net/api/health"
-    severity     = 4
-  },
-  {
-    workload     = "portal-repository-func"
-    environment  = "dev"
-    app          = "fn-portal-repo-func-dev-uksouth-01-be9e6fe6e9c7"
-    app_insights = "portal"
-    uri          = "https://fn-portal-repo-func-dev-uksouth-01-be9e6fe6e9c7.azurewebsites.net/api/health"
-    severity     = 4
-  },
-  {
-    workload     = "portal-servers-integration"
-    environment  = "dev"
-    app          = "app-portal-servers-int-dev-uksouth-01-32s5yslgz4hea"
-    app_insights = "portal"
-    uri          = "https://app-portal-servers-int-dev-uksouth-01-32s5yslgz4hea.azurewebsites.net/api/health"
-    severity     = 4
-  },
-  {
-    workload     = "portal-sync"
-    environment  = "dev"
-    app          = "fn-portal-sync-dev-uksouth-01-f65d076b94fb"
-    app_insights = "portal"
-    uri          = "https://fn-portal-sync-dev-uksouth-01-f65d076b94fb.azurewebsites.net/api/health"
-    severity     = 4
-  },
-  {
-    workload     = "geolocation"
-    environment  = "dev"
-    app          = "app-geolocation-api-dev-uksouth-01-3omiauqb7et4w"
-    app_insights = "geolocation"
-    uri          = "https://app-geolocation-api-dev-uksouth-01-3omiauqb7et4w.azurewebsites.net/api/health"
-    severity     = 4
-  },
-  {
-    workload     = "geolocation"
-    environment  = "dev"
-    app          = "app-geolocation-web-dev-uksouth-01-tzcaho2oarnae"
-    app_insights = "geolocation"
-    uri          = "https://app-geolocation-web-dev-uksouth-01-tzcaho2oarnae.azurewebsites.net/api/health"
-    severity     = 4
-  },
-  {
-    workload     = "molyneux-me"
-    environment  = "dev"
-    app          = "dev.molyneux.me"
+    app          = "google-availability"
     app_insights = "default"
-    uri          = "https://dev.molyneux.me/"
+    uri          = "https://www.google.co.uk/"
+    severity     = 4
+  },
+  {
+    workload     = "synthetic"
+    environment  = "dev"
+    app          = "microsoft-availability"
+    app_insights = "default"
+    uri          = "https://www.microsoft.com/"
     severity     = 4
   }
 ]
+
+disable_external_checks = false
 
 app_service_plan = {
   sku = "Y1"
