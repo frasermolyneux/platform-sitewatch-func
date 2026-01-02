@@ -9,12 +9,14 @@ locals {
     prd = 75
   }
 
-  action_group_map = {
-    0 = data.terraform_remote_state.platform_monitoring.outputs.monitor_action_groups.critical
-    1 = data.terraform_remote_state.platform_monitoring.outputs.monitor_action_groups.high
-    2 = data.terraform_remote_state.platform_monitoring.outputs.monitor_action_groups.moderate
-    3 = data.terraform_remote_state.platform_monitoring.outputs.monitor_action_groups.low
-    4 = data.terraform_remote_state.platform_monitoring.outputs.monitor_action_groups.informational
+  monitor_action_groups = try(data.terraform_remote_state.platform_monitoring.outputs.monitor_action_groups, null)
+
+  action_group_map = local.monitor_action_groups == null ? {} : {
+    "0" = local.monitor_action_groups.critical
+    "1" = local.monitor_action_groups.high
+    "2" = local.monitor_action_groups.moderate
+    "3" = local.monitor_action_groups.low
+    "4" = local.monitor_action_groups.informational
   }
 
   app_insights_map = merge(
