@@ -1,14 +1,14 @@
 provider "azurerm" {
-  alias               = "geolocation"
-  subscription_id     = var.geolocation_app_insights == null ? var.subscription_id : var.geolocation_app_insights.subscription_id
-  features            = {}
+  alias           = "geolocation"
+  subscription_id = var.geolocation_app_insights == null ? var.subscription_id : var.geolocation_app_insights.subscription_id
+  features {}
   storage_use_azuread = true
 }
 
 provider "azurerm" {
-  alias               = "portal"
-  subscription_id     = var.portal_app_insights == null ? var.subscription_id : var.portal_app_insights.subscription_id
-  features            = {}
+  alias           = "portal"
+  subscription_id = var.portal_app_insights == null ? var.subscription_id : var.portal_app_insights.subscription_id
+  features {}
   storage_use_azuread = true
 }
 
