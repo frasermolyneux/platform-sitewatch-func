@@ -1,7 +1,25 @@
 locals {
-  sitewatch_resource_groups = {
+  workload_resource_groups = {
     for location in var.locations :
-    location => data.terraform_remote_state.platform_workloads.outputs.workload_resource_groups[var.workload_name][var.environment].resource_groups[lower(location)].name
+    location => data.terraform_remote_state.platform_workloads.outputs.workload_resource_groups[var.workload_name][var.environment].resource_groups[lower(location)]
+  }
+
+  workload_backend = try(
+    data.terraform_remote_state.platform_workloads.outputs.workload_terraform_backends[var.workload_name][var.environment],
+    null
+  )
+
+  workload_administrative_unit = try(
+    data.terraform_remote_state.platform_workloads.outputs.workload_administrative_units[var.workload_name][var.environment],
+    null
+  )
+
+  severity_levels = {
+    critical      = 0
+    high          = 1
+    moderate      = 2
+    low           = 3
+    informational = 4
   }
 
   app_insights_sampling_percentage = {
@@ -10,11 +28,11 @@ locals {
   }
 
   action_group_map = {
-    0 = data.terraform_remote_state.platform_monitoring.outputs.monitor_action_groups.critical
-    1 = data.terraform_remote_state.platform_monitoring.outputs.monitor_action_groups.high
-    2 = data.terraform_remote_state.platform_monitoring.outputs.monitor_action_groups.moderate
-    3 = data.terraform_remote_state.platform_monitoring.outputs.monitor_action_groups.low
-    4 = data.terraform_remote_state.platform_monitoring.outputs.monitor_action_groups.informational
+    critical      = data.terraform_remote_state.platform_monitoring.outputs.monitor_action_groups.critical
+    high          = data.terraform_remote_state.platform_monitoring.outputs.monitor_action_groups.high
+    moderate      = data.terraform_remote_state.platform_monitoring.outputs.monitor_action_groups.moderate
+    low           = data.terraform_remote_state.platform_monitoring.outputs.monitor_action_groups.low
+    informational = data.terraform_remote_state.platform_monitoring.outputs.monitor_action_groups.informational
   }
 
   app_insights_map = merge(

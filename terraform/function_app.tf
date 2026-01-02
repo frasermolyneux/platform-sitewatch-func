@@ -1,16 +1,16 @@
 resource "azurerm_linux_function_app" "app" {
-  for_each = toset(var.locations)
+  for_each = data.azurerm_resource_group.rg
 
-  name = format("fn-platform-sitewatch-func-%s-%s-%s", var.environment, each.value, random_id.environment_location_id[each.value].hex)
+  name = format("fn-platform-sitewatch-func-%s-%s-%s", var.environment, each.key, random_id.environment_location_id[each.key].hex)
   tags = var.tags
 
-  resource_group_name = local.sitewatch_resource_groups[each.value]
-  location            = each.value
+  resource_group_name = each.value.name
+  location            = each.value.location
 
-  service_plan_id = azurerm_service_plan.sp[each.value].id
+  service_plan_id = azurerm_service_plan.sp[each.key].id
 
-  storage_account_name       = azurerm_storage_account.function_app_storage[each.value].name
-  storage_account_access_key = azurerm_storage_account.function_app_storage[each.value].primary_access_key
+  storage_account_name       = azurerm_storage_account.function_app_storage[each.key].name
+  storage_account_access_key = azurerm_storage_account.function_app_storage[each.key].primary_access_key
   //storage_uses_managed_identity = false
 
   https_only                    = true
@@ -28,7 +28,7 @@ resource "azurerm_linux_function_app" "app" {
       dotnet_version              = "9.0"
     }
 
-    application_insights_connection_string = azurerm_application_insights.ai[each.value].connection_string
+    application_insights_connection_string = azurerm_application_insights.ai[each.key].connection_string
 
     ftps_state          = "Disabled"
     always_on           = false // Not possible with consumption tier
@@ -70,25 +70,25 @@ resource "azurerm_linux_function_app" "app" {
 }
 
 resource "azurerm_role_assignment" "app_to_keyvault" {
-  for_each = toset(var.locations)
+  for_each = data.azurerm_resource_group.rg
 
   scope                = azurerm_key_vault.kv.id
   role_definition_name = "Key Vault Secrets User"
-  principal_id         = azurerm_linux_function_app.app[each.value].identity[0].principal_id
+  principal_id         = azurerm_linux_function_app.app[each.key].identity[0].principal_id
 }
 
 resource "azurerm_role_assignment" "app_to_storage_blob" {
-  for_each = toset(var.locations)
+  for_each = data.azurerm_resource_group.rg
 
-  scope                = azurerm_storage_account.function_app_storage[each.value].id
+  scope                = azurerm_storage_account.function_app_storage[each.key].id
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = azurerm_linux_function_app.app[each.value].identity[0].principal_id
+  principal_id         = azurerm_linux_function_app.app[each.key].identity[0].principal_id
 }
 
 resource "azurerm_role_assignment" "app_to_storage_queue" {
-  for_each = toset(var.locations)
+  for_each = data.azurerm_resource_group.rg
 
-  scope                = azurerm_storage_account.function_app_storage[each.value].id
+  scope                = azurerm_storage_account.function_app_storage[each.key].id
   role_definition_name = "Storage Queue Data Contributor"
-  principal_id         = azurerm_linux_function_app.app[each.value].identity[0].principal_id
+  principal_id         = azurerm_linux_function_app.app[each.key].identity[0].principal_id
 }

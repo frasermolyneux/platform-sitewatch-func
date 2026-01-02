@@ -1,9 +1,9 @@
 resource "azurerm_storage_account" "function_app_storage" {
-  for_each = toset(var.locations)
+  for_each = data.azurerm_resource_group.rg
 
-  name                = "safn${random_id.environment_location_id[each.value].hex}"
-  resource_group_name = local.sitewatch_resource_groups[each.value]
-  location            = each.value
+  name                = "safn${random_id.environment_location_id[each.key].hex}"
+  resource_group_name = each.value.name
+  location            = each.value.location
 
   account_tier             = "Standard"
   account_replication_type = "LRS"

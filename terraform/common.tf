@@ -7,7 +7,7 @@ resource "random_id" "environment_id" {
 }
 
 resource "random_id" "environment_location_id" {
-  for_each = toset(var.locations)
+  for_each = data.azurerm_resource_group.rg
 
   byte_length = 6
 }

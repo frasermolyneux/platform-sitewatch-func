@@ -1,10 +1,10 @@
 resource "azurerm_application_insights" "ai" {
-  for_each = toset(var.locations)
+  for_each = data.azurerm_resource_group.rg
 
-  name = format("ai-platform-sitewatch-func-%s-%s", var.environment, each.value)
+  name = format("ai-platform-sitewatch-func-%s-%s", var.environment, each.key)
 
-  location            = each.value
-  resource_group_name = local.sitewatch_resource_groups[each.value]
+  location            = each.value.location
+  resource_group_name = each.value.name
 
   workspace_id = data.terraform_remote_state.platform_monitoring.outputs.log_analytics.id
 

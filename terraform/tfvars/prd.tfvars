@@ -70,7 +70,7 @@ availability_tests = [
     app          = "fn-portal-event-ingest-prd-uksouth-01-0a313c960b27"
     app_insights = "portal"
     uri          = "https://fn-portal-event-ingest-prd-uksouth-01-0a313c960b27.azurewebsites.net/api/health"
-    severity     = 0
+    severity     = "critical"
   },
   {
     workload     = "portal-repository-v1"
@@ -78,7 +78,7 @@ availability_tests = [
     app          = "app-portal-repo-prd-uksouth-v1-b8f876e0fb09"
     app_insights = "portal"
     uri          = "https://app-portal-repo-prd-uksouth-v1-b8f876e0fb09.azurewebsites.net/api/health"
-    severity     = 0
+    severity     = "critical"
   },
   {
     workload     = "portal-repository-v2"
@@ -86,7 +86,7 @@ availability_tests = [
     app          = "app-portal-repo-prd-uksouth-v2-b8f876e0fb09"
     app_insights = "portal"
     uri          = "https://app-portal-repo-prd-uksouth-v2-b8f876e0fb09.azurewebsites.net/api/health"
-    severity     = 0
+    severity     = "critical"
   },
   {
     workload     = "portal-repository-func"
@@ -94,7 +94,7 @@ availability_tests = [
     app          = "fn-portal-repo-func-prd-uksouth-01-f72fbef87dc5"
     app_insights = "portal"
     uri          = "https://fn-portal-repo-func-prd-uksouth-01-f72fbef87dc5.azurewebsites.net/api/health"
-    severity     = 1
+    severity     = "high"
   },
   {
     workload     = "portal-servers-integration"
@@ -102,7 +102,7 @@ availability_tests = [
     app          = "app-portal-servers-int-prd-uksouth-01-bxxyivgotrxya"
     app_insights = "portal"
     uri          = "https://app-portal-servers-int-prd-uksouth-01-bxxyivgotrxya.azurewebsites.net/api/health"
-    severity     = 1
+    severity     = "high"
   },
   {
     workload     = "portal-sync"
@@ -110,7 +110,7 @@ availability_tests = [
     app          = "fn-portal-sync-prd-uksouth-01-e7b4c78e276d"
     app_insights = "portal"
     uri          = "https://fn-portal-sync-prd-uksouth-01-e7b4c78e276d.azurewebsites.net/api/health"
-    severity     = 0
+    severity     = "critical"
   },
   {
     workload     = "portal-web"
@@ -118,7 +118,7 @@ availability_tests = [
     app          = "app-portal-web-prd-uksouth-01-l6supxzf6itfq"
     app_insights = "portal"
     uri          = "https://app-portal-web-prd-uksouth-01-l6supxzf6itfq.azurewebsites.net/api/health"
-    severity     = 0
+    severity     = "critical"
   },
   {
     workload     = "geolocation"
@@ -126,7 +126,7 @@ availability_tests = [
     app          = "app-geolocation-api-prd-uksouth-01-queggvl6v5yta"
     app_insights = "geolocation"
     uri          = "https://app-geolocation-api-prd-uksouth-01-queggvl6v5yta.azurewebsites.net/api/health"
-    severity     = 1
+    severity     = "high"
   },
   {
     workload     = "geolocation"
@@ -134,7 +134,7 @@ availability_tests = [
     app          = "app-geolocation-web-prd-uksouth-01-ndrrqvrn34qke"
     app_insights = "geolocation"
     uri          = "https://app-geolocation-web-prd-uksouth-01-ndrrqvrn34qke.azurewebsites.net/api/health"
-    severity     = 1
+    severity     = "high"
   },
   {
     workload     = "xtremeidiots-forums"
@@ -142,7 +142,7 @@ availability_tests = [
     app          = "www.xtremeidiots.com-web"
     app_insights = "default"
     uri          = "https://www.xtremeidiots.com"
-    severity     = 0
+    severity     = "critical"
   },
   {
     workload     = "xtremeidiots-forums"
@@ -150,7 +150,7 @@ availability_tests = [
     app          = "www.xtremeidiots.com-tasks"
     app_insights = "default"
     uri          = "https://www.xtremeidiots.com/applications/core/interface/task/web.php?key=%xtremeidiots_forums_task_key%"
-    severity     = 1
+    severity     = "high"
   },
   {
     workload     = "xtremeidiots-redirect"
@@ -158,7 +158,7 @@ availability_tests = [
     app          = "redirect.xtremeidiots.net"
     app_insights = "default"
     uri          = "https://redirect.xtremeidiots.net"
-    severity     = 1
+    severity     = "high"
   },
   {
     workload     = "bishopsbees"
@@ -166,7 +166,7 @@ availability_tests = [
     app          = "bishopbees.co.uk"
     app_insights = "default"
     uri          = "https://bishopsbees.co.uk"
-    severity     = 0
+    severity     = "critical"
   },
   {
     workload     = "molyneux-me"
@@ -174,7 +174,7 @@ availability_tests = [
     app          = "molyneux.me"
     app_insights = "default"
     uri          = "https://www.molyneux.me/"
-    severity     = 3
+    severity     = "low"
   }
 ]
 

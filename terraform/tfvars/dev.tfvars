@@ -30,7 +30,7 @@ availability_tests = [
     app          = "google-availability"
     app_insights = "default"
     uri          = "https://www.google.co.uk/"
-    severity     = 4
+    severity     = "informational"
   },
   {
     workload     = "synthetic"
@@ -38,7 +38,7 @@ availability_tests = [
     app          = "microsoft-availability"
     app_insights = "default"
     uri          = "https://www.microsoft.com/"
-    severity     = 4
+    severity     = "informational"
   }
 ]
 

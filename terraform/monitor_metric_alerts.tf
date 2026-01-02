@@ -3,7 +3,7 @@ resource "azurerm_monitor_metric_alert" "availability" {
 
   name = "${each.value.workload}-${each.value.environment} - ${each.key} - availability"
 
-  resource_group_name = local.sitewatch_resource_groups[var.locations[0]]
+  resource_group_name = local.workload_resource_groups[var.locations[0]]
   scopes              = [local.app_insights_map[each.value.app_insights].id]
 
   description = "Availability test for ${each.key}"
@@ -22,7 +22,7 @@ resource "azurerm_monitor_metric_alert" "availability" {
     }
   }
 
-  severity = each.value.severity
+  severity = local.severity_levels[each.value.severity]
 
   frequency   = "PT1M"
   window_size = "PT30M"
