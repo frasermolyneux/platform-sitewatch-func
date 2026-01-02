@@ -14,6 +14,8 @@ locals {
     null
   )
 
+  platform_monitoring_workspace_id = data.terraform_remote_state.platform_monitoring.outputs.log_analytics.id
+
   severity_levels = {
     critical      = 0
     high          = 1

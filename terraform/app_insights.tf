@@ -6,7 +6,7 @@ resource "azurerm_application_insights" "ai" {
   location            = each.value.location
   resource_group_name = each.value.name
 
-  workspace_id = data.terraform_remote_state.platform_monitoring.outputs.log_analytics.id
+  workspace_id = local.platform_monitoring_workspace_id
 
   application_type   = "web"
   disable_ip_masking = true
