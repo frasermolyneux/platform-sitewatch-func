@@ -21,11 +21,7 @@ subscriptions = {
 
 geolocation_app_insights = null
 
-portal_app_insights = {
-  subscription_id     = "d68448b0-9947-46d7-8771-baa331a3063a"
-  resource_group_name = "rg-portal-core-dev-swedencentral"
-  name                = "ai-portal-core-dev-swedencentral"
-}
+portal_app_insights = null
 
 availability_tests = [
   {
