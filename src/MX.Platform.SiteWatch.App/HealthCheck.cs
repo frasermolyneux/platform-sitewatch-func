@@ -5,15 +5,8 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace MX.Platform.SitewatchFunc;
 
-public class HealthCheck
+public class HealthCheck(HealthCheckService healthCheck)
 {
-    private readonly HealthCheckService healthCheck;
-
-    public HealthCheck(HealthCheckService healthCheck)
-    {
-        this.healthCheck = healthCheck;
-    }
-
     [Function(nameof(HealthCheck))]
     public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "health")] HttpRequestData req,
         FunctionContext context)
