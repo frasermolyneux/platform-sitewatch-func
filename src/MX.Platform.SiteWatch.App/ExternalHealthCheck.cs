@@ -13,7 +13,7 @@ using Polly.Retry;
 
 namespace MX.Platform.SitewatchFunc;
 
-public class ExternalHealthCheck
+public partial class ExternalHealthCheck
 {
     private readonly IConfiguration configuration;
     private readonly IOptionsMonitor<SiteWatchOptions> optionsMonitor;
@@ -128,7 +128,7 @@ public class ExternalHealthCheck
             var telemetryConfiguration = new TelemetryConfiguration
             {
                 ConnectionString = connectionString,
-                TelemetryChannel = new InMemoryChannel()
+                TelemetryChannel = new InMemoryChannel(),
             };
 
             client = new TelemetryClient(telemetryConfiguration);
@@ -140,13 +140,13 @@ public class ExternalHealthCheck
 
     private async Task RunAvailabilityTestAsync(ILogger log, string uri)
     {
-        var matches = Regex.Matches(uri, @"%([a-zA-Z1-9_]+)%");
+        var matches = TokenPattern().Matches(uri);
 
         foreach (Match match in matches)
         {
             if (match.Success)
             {
-                var token = match.Groups[1].ToString();
+                var token = match.Groups[1].Value;
 
                 if (configuration[token] == null)
                 {
@@ -168,4 +168,7 @@ public class ExternalHealthCheck
             throw new Exception($"Failed to get a successful response from {uri}, received {response.StatusCode}");
         }
     }
+
+    [GeneratedRegex(@"%([a-zA-Z1-9_]+)%")]
+    private static partial Regex TokenPattern();
 }
