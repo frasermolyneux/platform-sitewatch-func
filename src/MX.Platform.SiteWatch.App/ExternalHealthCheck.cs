@@ -169,6 +169,6 @@ public partial class ExternalHealthCheck
         }
     }
 
-    [GeneratedRegex(@"%([a-zA-Z1-9_]+)%")]
+    [GeneratedRegex(@"%([a-zA-Z0-9_]+)%")]
     private static partial Regex TokenPattern();
 }
