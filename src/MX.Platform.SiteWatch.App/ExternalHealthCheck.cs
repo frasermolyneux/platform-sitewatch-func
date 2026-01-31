@@ -32,7 +32,7 @@ public partial class ExternalHealthCheck
             .Handle<HttpRequestException>()
             .Or<TaskCanceledException>()
             .OrResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
-            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1 << retryAttempt),
                 onRetry: (outcome, timespan, retryAttempt, context) =>
                 {
                     var message = $"Request failed with {outcome.Exception?.Message ?? outcome.Result.StatusCode.ToString()}. Waiting {timespan} before next retry. Retry attempt {retryAttempt}";
@@ -84,8 +84,7 @@ public partial class ExternalHealthCheck
 
             availability.Context.Operation.ParentId = Activity.Current?.SpanId.ToString();
             availability.Context.Operation.Id = Activity.Current?.RootId;
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
+            var stopwatch = Stopwatch.StartNew();
 
             try
             {
