@@ -1,15 +1,15 @@
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace MX.Platform.SitewatchFunc;
 
 public class TestConfig
 {
-    [JsonProperty("app")]
+    [JsonPropertyName("app")]
     public required string App { get; set; }
 
-    [JsonProperty("app_insights")]
+    [JsonPropertyName("app_insights")]
     public required string AppInsights { get; set; }
 
-    [JsonProperty("uri")]
+    [JsonPropertyName("uri")]
     public required string Uri { get; set; }
 }

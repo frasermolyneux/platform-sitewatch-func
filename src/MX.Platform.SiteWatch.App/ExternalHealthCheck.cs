@@ -8,7 +8,6 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Polly;
 using Polly.Retry;
 
@@ -90,12 +89,10 @@ public class ExternalHealthCheck
 
             try
             {
-                using (var activity = new Activity("AvailabilityContext"))
-                {
-                    activity.Start();
-                    availability.Id = Activity.Current?.SpanId.ToString();
-                    await RunAvailabilityTestAsync(log, testConfig.Uri);
-                }
+                using var activity = new Activity("AvailabilityContext");
+                activity.Start();
+                availability.Id = Activity.Current?.SpanId.ToString();
+                await RunAvailabilityTestAsync(log, testConfig.Uri);
                 availability.Success = true;
             }
             catch (Exception ex)
@@ -160,16 +157,14 @@ public class ExternalHealthCheck
             }
         }
 
-        using (var httpClient = new HttpClient())
-        {
-            httpClient.Timeout = TimeSpan.FromSeconds(10);
+        using var httpClient = new HttpClient();
+        httpClient.Timeout = TimeSpan.FromSeconds(10);
 
-            var response = await retryPolicy.ExecuteAsync(() => httpClient.GetAsync(uri));
-            if (!response.IsSuccessStatusCode)
-            {
-                telemetryClient.TrackTrace(response.Content.ReadAsStringAsync().Result);
-                throw new Exception($"Failed to get a successful response from {uri}, received {response.StatusCode}");
-            }
+        var response = await retryPolicy.ExecuteAsync(() => httpClient.GetAsync(uri));
+        if (!response.IsSuccessStatusCode)
+        {
+            telemetryClient.TrackTrace(response.Content.ReadAsStringAsync().Result);
+            throw new Exception($"Failed to get a successful response from {uri}, received {response.StatusCode}");
         }
     }
 }
