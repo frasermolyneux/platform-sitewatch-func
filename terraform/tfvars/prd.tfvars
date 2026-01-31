@@ -67,33 +67,33 @@ availability_tests = [
   {
     workload     = "portal-event-ingest"
     environment  = "prd"
-    app          = "fn-portal-event-ingest-prd-uksouth-01-0a313c960b27"
+    app          = "fn-portal-event-ingest-prd-uksouth-3a23e3c6dc68"
     app_insights = "portal"
-    uri          = "https://fn-portal-event-ingest-prd-uksouth-01-0a313c960b27.azurewebsites.net/api/health"
+    uri          = "https://fn-portal-event-ingest-prd-uksouth-3a23e3c6dc68.azurewebsites.net/api/health"
     severity     = "critical"
   },
   {
     workload     = "portal-repository-v1"
     environment  = "prd"
-    app          = "app-portal-repo-prd-uksouth-v1-b8f876e0fb09"
+    app          = "app-portal-repo-prd-uksouth-v1-655b79d54d89"
     app_insights = "portal"
-    uri          = "https://app-portal-repo-prd-uksouth-v1-b8f876e0fb09.azurewebsites.net/api/health"
+    uri          = "https://app-portal-repo-prd-uksouth-v1-655b79d54d89.azurewebsites.net/api/health"
     severity     = "critical"
   },
   {
     workload     = "portal-repository-v2"
     environment  = "prd"
-    app          = "app-portal-repo-prd-uksouth-v2-b8f876e0fb09"
+    app          = "app-portal-repo-prd-uksouth-v2-655b79d54d89"
     app_insights = "portal"
-    uri          = "https://app-portal-repo-prd-uksouth-v2-b8f876e0fb09.azurewebsites.net/api/health"
+    uri          = "https://app-portal-repo-prd-uksouth-v2-655b79d54d89.azurewebsites.net/api/health"
     severity     = "critical"
   },
   {
     workload     = "portal-repository-func"
     environment  = "prd"
-    app          = "fn-portal-repo-func-prd-uksouth-01-f72fbef87dc5"
+    app          = "fn-portal-repository-func-prd-uksouth-ad4109a900bb"
     app_insights = "portal"
-    uri          = "https://fn-portal-repo-func-prd-uksouth-01-f72fbef87dc5.azurewebsites.net/api/health"
+    uri          = "https://fn-portal-repository-func-prd-uksouth-ad4109a900bb.azurewebsites.net/api/health"
     severity     = "high"
   },
   {
@@ -107,17 +107,17 @@ availability_tests = [
   {
     workload     = "portal-sync"
     environment  = "prd"
-    app          = "fn-portal-sync-prd-uksouth-01-e7b4c78e276d"
+    app          = "fn-portal-sync-func-prd-uksouth-50d011333089"
     app_insights = "portal"
-    uri          = "https://fn-portal-sync-prd-uksouth-01-e7b4c78e276d.azurewebsites.net/api/health"
+    uri          = "https://fn-portal-sync-func-prd-uksouth-50d011333089.azurewebsites.net/api/health"
     severity     = "critical"
   },
   {
     workload     = "portal-web"
     environment  = "prd"
-    app          = "app-portal-web-prd-uksouth-01-l6supxzf6itfq"
+    app          = "app-portal-web-prd-uksouth-fe584e15256a"
     app_insights = "portal"
-    uri          = "https://app-portal-web-prd-uksouth-01-l6supxzf6itfq.azurewebsites.net/api/health"
+    uri          = "https://app-portal-web-prd-uksouth-fe584e15256a.azurewebsites.net/api/health"
     severity     = "critical"
   },
   {
