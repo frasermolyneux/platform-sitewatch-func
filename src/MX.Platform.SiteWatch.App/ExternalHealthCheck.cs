@@ -19,7 +19,7 @@ public class ExternalHealthCheck
     private readonly IConfiguration configuration;
     private readonly IOptionsMonitor<SiteWatchOptions> optionsMonitor;
     private readonly TelemetryClient telemetryClient;
-    public Dictionary<string, TelemetryClient> telemetryClients { get; set; } = new Dictionary<string, TelemetryClient>();
+    public Dictionary<string, TelemetryClient> telemetryClients { get; set; } = [];
 
     private readonly AsyncRetryPolicy<HttpResponseMessage> retryPolicy;
 
@@ -57,7 +57,7 @@ public class ExternalHealthCheck
             return;
         }
 
-        var testConfigs = options.Tests ?? new List<TestConfig>();
+        var testConfigs = options.Tests ?? [];
 
         if (testConfigs.Count == 0)
         {
@@ -83,8 +83,8 @@ public class ExternalHealthCheck
                 Success = false,
             };
 
-            availability.Context.Operation.ParentId = Activity.Current.SpanId.ToString();
-            availability.Context.Operation.Id = Activity.Current.RootId;
+            availability.Context.Operation.ParentId = Activity.Current?.SpanId.ToString();
+            availability.Context.Operation.Id = Activity.Current?.RootId;
             var stopwatch = new Stopwatch();
             stopwatch.Start();
 
@@ -93,7 +93,7 @@ public class ExternalHealthCheck
                 using (var activity = new Activity("AvailabilityContext"))
                 {
                     activity.Start();
-                    availability.Id = Activity.Current.SpanId.ToString();
+                    availability.Id = Activity.Current?.SpanId.ToString();
                     await RunAvailabilityTestAsync(log, testConfig.Uri);
                 }
                 availability.Success = true;

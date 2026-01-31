@@ -35,7 +35,7 @@ var host = new HostBuilder()
                 var rawConfig = config["test_config"];
                 if (!string.IsNullOrWhiteSpace(rawConfig))
                 {
-                    options.Tests = JsonConvert.DeserializeObject<List<TestConfig>>(rawConfig) ?? new();
+                    options.Tests = JsonConvert.DeserializeObject<List<TestConfig>>(rawConfig) ?? [];
                 }
             }
 
