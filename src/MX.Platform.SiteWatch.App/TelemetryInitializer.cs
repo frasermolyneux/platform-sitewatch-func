@@ -1,13 +1,12 @@
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.Extensibility;
 
-namespace MX.Platform.SitewatchFunc
+namespace MX.Platform.SitewatchFunc;
+
+public class TelemetryInitializer : ITelemetryInitializer
 {
-    public class TelemetryInitializer : ITelemetryInitializer
+    public void Initialize(ITelemetry telemetry)
     {
-        public void Initialize(ITelemetry telemetry)
-        {
-            telemetry.Context.Cloud.RoleName = "Sitewatch FuncApp";
-        }
+        telemetry.Context.Cloud.RoleName = "Sitewatch FuncApp";
     }
 }

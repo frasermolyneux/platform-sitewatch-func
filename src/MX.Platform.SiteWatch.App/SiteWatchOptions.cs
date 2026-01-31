@@ -6,7 +6,7 @@ public class SiteWatchOptions
 {
     public Dictionary<string, string> Telemetry { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
-    public List<TestConfig> Tests { get; set; } = new();
+    public List<TestConfig> Tests { get; set; } = [];
 
     public bool DisableExternalChecks { get; set; }
 }

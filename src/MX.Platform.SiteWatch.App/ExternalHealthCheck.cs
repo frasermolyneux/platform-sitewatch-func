@@ -8,18 +8,17 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Polly;
 using Polly.Retry;
 
 namespace MX.Platform.SitewatchFunc;
 
-public class ExternalHealthCheck
+public partial class ExternalHealthCheck
 {
     private readonly IConfiguration configuration;
     private readonly IOptionsMonitor<SiteWatchOptions> optionsMonitor;
     private readonly TelemetryClient telemetryClient;
-    public Dictionary<string, TelemetryClient> telemetryClients { get; set; } = new Dictionary<string, TelemetryClient>();
+    public Dictionary<string, TelemetryClient> telemetryClients { get; set; } = [];
 
     private readonly AsyncRetryPolicy<HttpResponseMessage> retryPolicy;
 
@@ -33,7 +32,7 @@ public class ExternalHealthCheck
             .Handle<HttpRequestException>()
             .Or<TaskCanceledException>()
             .OrResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
-            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1 << retryAttempt),
                 onRetry: (outcome, timespan, retryAttempt, context) =>
                 {
                     var message = $"Request failed with {outcome.Exception?.Message ?? outcome.Result.StatusCode.ToString()}. Waiting {timespan} before next retry. Retry attempt {retryAttempt}";
@@ -41,7 +40,7 @@ public class ExternalHealthCheck
 
                     if (outcome.Result != null && !outcome.Result.IsSuccessStatusCode)
                     {
-                        telemetryClient.TrackTrace(outcome.Result.Content.ReadAsStringAsync().Result);
+                        telemetryClient.TrackTrace(outcome.Result.Content.ReadAsStringAsync().GetAwaiter().GetResult());
                     }
                 });
     }
@@ -57,7 +56,7 @@ public class ExternalHealthCheck
             return;
         }
 
-        var testConfigs = options.Tests ?? new List<TestConfig>();
+        var testConfigs = options.Tests ?? [];
 
         if (testConfigs.Count == 0)
         {
@@ -83,19 +82,16 @@ public class ExternalHealthCheck
                 Success = false,
             };
 
-            availability.Context.Operation.ParentId = Activity.Current.SpanId.ToString();
-            availability.Context.Operation.Id = Activity.Current.RootId;
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
+            availability.Context.Operation.ParentId = Activity.Current?.SpanId.ToString();
+            availability.Context.Operation.Id = Activity.Current?.RootId;
+            var stopwatch = Stopwatch.StartNew();
 
             try
             {
-                using (var activity = new Activity("AvailabilityContext"))
-                {
-                    activity.Start();
-                    availability.Id = Activity.Current.SpanId.ToString();
-                    await RunAvailabilityTestAsync(log, testConfig.Uri);
-                }
+                using var activity = new Activity("AvailabilityContext");
+                activity.Start();
+                availability.Id = Activity.Current?.SpanId.ToString();
+                await RunAvailabilityTestAsync(log, testConfig.Uri);
                 availability.Success = true;
             }
             catch (Exception ex)
@@ -131,7 +127,7 @@ public class ExternalHealthCheck
             var telemetryConfiguration = new TelemetryConfiguration
             {
                 ConnectionString = connectionString,
-                TelemetryChannel = new InMemoryChannel()
+                TelemetryChannel = new InMemoryChannel(),
             };
 
             client = new TelemetryClient(telemetryConfiguration);
@@ -143,13 +139,13 @@ public class ExternalHealthCheck
 
     private async Task RunAvailabilityTestAsync(ILogger log, string uri)
     {
-        var matches = Regex.Matches(uri, @"%([a-zA-Z1-9_]+)%");
+        var matches = TokenPattern().Matches(uri);
 
         foreach (Match match in matches)
         {
             if (match.Success)
             {
-                var token = match.Groups[1].ToString();
+                var token = match.Groups[1].Value;
 
                 if (configuration[token] == null)
                 {
@@ -160,16 +156,18 @@ public class ExternalHealthCheck
             }
         }
 
-        using (var httpClient = new HttpClient())
-        {
-            httpClient.Timeout = TimeSpan.FromSeconds(10);
+        using var httpClient = new HttpClient();
+        httpClient.Timeout = TimeSpan.FromSeconds(10);
 
-            var response = await retryPolicy.ExecuteAsync(() => httpClient.GetAsync(uri));
-            if (!response.IsSuccessStatusCode)
-            {
-                telemetryClient.TrackTrace(response.Content.ReadAsStringAsync().Result);
-                throw new Exception($"Failed to get a successful response from {uri}, received {response.StatusCode}");
-            }
+        var response = await retryPolicy.ExecuteAsync(() => httpClient.GetAsync(uri));
+        if (!response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            telemetryClient.TrackTrace(content);
+            throw new Exception($"Failed to get a successful response from {uri}, received {response.StatusCode}");
         }
     }
+
+    [GeneratedRegex(@"%([a-zA-Z0-9_]+)%")]
+    private static partial Regex TokenPattern();
 }
