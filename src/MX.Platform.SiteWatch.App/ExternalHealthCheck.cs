@@ -40,7 +40,7 @@ public class ExternalHealthCheck
 
                     if (outcome.Result != null && !outcome.Result.IsSuccessStatusCode)
                     {
-                        telemetryClient.TrackTrace(outcome.Result.Content.ReadAsStringAsync().Result);
+                        telemetryClient.TrackTrace(outcome.Result.Content.ReadAsStringAsync().GetAwaiter().GetResult());
                     }
                 });
     }
@@ -163,7 +163,8 @@ public class ExternalHealthCheck
         var response = await retryPolicy.ExecuteAsync(() => httpClient.GetAsync(uri));
         if (!response.IsSuccessStatusCode)
         {
-            telemetryClient.TrackTrace(response.Content.ReadAsStringAsync().Result);
+            var content = await response.Content.ReadAsStringAsync();
+            telemetryClient.TrackTrace(content);
             throw new Exception($"Failed to get a successful response from {uri}, received {response.StatusCode}");
         }
     }

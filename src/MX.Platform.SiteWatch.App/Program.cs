@@ -35,8 +35,7 @@ var host = new HostBuilder()
                 var rawConfig = config["test_config"];
                 if (!string.IsNullOrWhiteSpace(rawConfig))
                 {
-                    var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                    options.Tests = JsonSerializer.Deserialize<List<TestConfig>>(rawConfig, jsonOptions) ?? [];
+                    options.Tests = JsonSerializer.Deserialize<List<TestConfig>>(rawConfig) ?? [];
                 }
             }
 
