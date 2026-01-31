@@ -59,8 +59,8 @@ geolocation_app_insights = {
 
 portal_app_insights = {
   subscription_id     = "32444f38-32f4-409f-889c-8e8aa2b5b4d1"
-  resource_group_name = "rg-portal-core-prd-uksouth-01"
-  name                = "ai-portal-core-prd-uksouth-01"
+  resource_group_name = "rg-portal-core-prd-uksouth"
+  name                = "ai-portal-core-prd-uksouth"
 }
 
 availability_tests = [
