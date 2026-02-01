@@ -20,6 +20,7 @@ var host = new HostBuilder()
     {
         var config = context.Configuration;
 
+        services.AddHttpClient();
         services.AddLogging();
         services.AddSingleton<ITelemetryInitializer, TelemetryInitializer>();
         services.AddApplicationInsightsTelemetryWorkerService();
@@ -35,7 +36,11 @@ var host = new HostBuilder()
                 var rawConfig = config["test_config"];
                 if (!string.IsNullOrWhiteSpace(rawConfig))
                 {
-                    options.Tests = JsonSerializer.Deserialize<List<TestConfig>>(rawConfig) ?? [];
+                    var jsonOptions = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                    };
+                    options.Tests = JsonSerializer.Deserialize<List<TestConfig>>(rawConfig, jsonOptions) ?? [];
                 }
             }
 

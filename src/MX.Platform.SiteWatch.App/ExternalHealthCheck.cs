@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Microsoft.ApplicationInsights;
@@ -18,15 +19,18 @@ public partial class ExternalHealthCheck
     private readonly IConfiguration configuration;
     private readonly IOptionsMonitor<SiteWatchOptions> optionsMonitor;
     private readonly TelemetryClient telemetryClient;
-    public Dictionary<string, TelemetryClient> telemetryClients { get; set; } = [];
+    private readonly ConcurrentDictionary<string, TelemetryClient> telemetryClients = new();
+    private readonly HttpClient httpClient;
 
     private readonly AsyncRetryPolicy<HttpResponseMessage> retryPolicy;
 
-    public ExternalHealthCheck(IConfiguration configuration, TelemetryClient telemetryClient, IOptionsMonitor<SiteWatchOptions> optionsMonitor)
+    public ExternalHealthCheck(IConfiguration configuration, TelemetryClient telemetryClient, IOptionsMonitor<SiteWatchOptions> optionsMonitor, IHttpClientFactory httpClientFactory)
     {
         this.configuration = configuration;
         this.telemetryClient = telemetryClient;
         this.optionsMonitor = optionsMonitor;
+        this.httpClient = httpClientFactory.CreateClient();
+        this.httpClient.Timeout = TimeSpan.FromSeconds(10);
 
         retryPolicy = Policy
             .Handle<HttpRequestException>()
@@ -40,6 +44,8 @@ public partial class ExternalHealthCheck
 
                     if (outcome.Result != null && !outcome.Result.IsSuccessStatusCode)
                     {
+                        // Note: This is a synchronous callback from Polly, cannot be made async
+                        // Using GetAwaiter().GetResult() as a last resort in error logging path
                         telemetryClient.TrackTrace(outcome.Result.Content.ReadAsStringAsync().GetAwaiter().GetResult());
                     }
                 });
@@ -90,7 +96,7 @@ public partial class ExternalHealthCheck
             {
                 using var activity = new Activity("AvailabilityContext");
                 activity.Start();
-                availability.Id = Activity.Current?.SpanId.ToString();
+                availability.Id = activity.SpanId.ToString();
                 await RunAvailabilityTestAsync(log, testConfig.Uri);
                 availability.Success = true;
             }
@@ -114,13 +120,13 @@ public partial class ExternalHealthCheck
     {
         var key = string.IsNullOrWhiteSpace(appInsightsKey) ? "default" : appInsightsKey;
 
-        if (!telemetryClients.TryGetValue(key, out var client))
+        return telemetryClients.GetOrAdd(key, k =>
         {
-            if (!options.Telemetry.TryGetValue(key, out var connectionString))
+            if (!options.Telemetry.TryGetValue(k, out var connectionString))
             {
                 if (!options.Telemetry.TryGetValue("default", out connectionString))
                 {
-                    return null;
+                    return null!;
                 }
             }
 
@@ -130,11 +136,8 @@ public partial class ExternalHealthCheck
                 TelemetryChannel = new InMemoryChannel(),
             };
 
-            client = new TelemetryClient(telemetryConfiguration);
-            telemetryClients.Add(key, client);
-        }
-
-        return client;
+            return new TelemetryClient(telemetryConfiguration);
+        });
     }
 
     private async Task RunAvailabilityTestAsync(ILogger log, string uri)
@@ -155,9 +158,6 @@ public partial class ExternalHealthCheck
                 uri = uri.Replace($"%{token}%", configuration[token]);
             }
         }
-
-        using var httpClient = new HttpClient();
-        httpClient.Timeout = TimeSpan.FromSeconds(10);
 
         var response = await retryPolicy.ExecuteAsync(() => httpClient.GetAsync(uri));
         if (!response.IsSuccessStatusCode)

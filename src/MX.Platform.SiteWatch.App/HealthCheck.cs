@@ -12,6 +12,6 @@ public class HealthCheck(HealthCheckService healthCheck)
         FunctionContext context)
     {
         var healthStatus = await healthCheck.CheckHealthAsync();
-        return new OkObjectResult(Enum.GetName(healthStatus.Status));
+        return new OkObjectResult(Enum.GetName(healthStatus.Status) ?? "Unknown");
     }
 }
