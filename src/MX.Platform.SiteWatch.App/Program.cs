@@ -20,7 +20,10 @@ var host = new HostBuilder()
     {
         var config = context.Configuration;
 
-        services.AddHttpClient();
+        services.AddHttpClient("SiteWatch", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(10);
+        });
         services.AddLogging();
         services.AddSingleton<ITelemetryInitializer, TelemetryInitializer>();
         services.AddApplicationInsightsTelemetryWorkerService();

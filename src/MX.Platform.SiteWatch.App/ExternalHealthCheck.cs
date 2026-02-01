@@ -29,8 +29,7 @@ public partial class ExternalHealthCheck
         this.configuration = configuration;
         this.telemetryClient = telemetryClient;
         this.optionsMonitor = optionsMonitor;
-        this.httpClient = httpClientFactory.CreateClient();
-        this.httpClient.Timeout = TimeSpan.FromSeconds(10);
+        this.httpClient = httpClientFactory.CreateClient("SiteWatch");
 
         retryPolicy = Policy
             .Handle<HttpRequestException>()
@@ -120,24 +119,27 @@ public partial class ExternalHealthCheck
     {
         var key = string.IsNullOrWhiteSpace(appInsightsKey) ? "default" : appInsightsKey;
 
-        return telemetryClients.GetOrAdd(key, k =>
+        if (telemetryClients.TryGetValue(key, out var existingClient))
         {
-            if (!options.Telemetry.TryGetValue(k, out var connectionString))
+            return existingClient;
+        }
+
+        if (!options.Telemetry.TryGetValue(key, out var connectionString))
+        {
+            if (!options.Telemetry.TryGetValue("default", out connectionString))
             {
-                if (!options.Telemetry.TryGetValue("default", out connectionString))
-                {
-                    return null!;
-                }
+                return null;
             }
+        }
 
-            var telemetryConfiguration = new TelemetryConfiguration
-            {
-                ConnectionString = connectionString,
-                TelemetryChannel = new InMemoryChannel(),
-            };
+        var telemetryConfiguration = new TelemetryConfiguration
+        {
+            ConnectionString = connectionString,
+            TelemetryChannel = new InMemoryChannel(),
+        };
 
-            return new TelemetryClient(telemetryConfiguration);
-        });
+        var client = new TelemetryClient(telemetryConfiguration);
+        return telemetryClients.GetOrAdd(key, client);
     }
 
     private async Task RunAvailabilityTestAsync(ILogger log, string uri)
