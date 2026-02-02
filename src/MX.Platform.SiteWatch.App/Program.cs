@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json;
 
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Azure.Functions.Worker;
@@ -6,7 +7,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 
 using MX.Platform.SitewatchFunc;
 
@@ -20,6 +20,10 @@ var host = new HostBuilder()
     {
         var config = context.Configuration;
 
+        services.AddHttpClient("SiteWatch", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(10);
+        });
         services.AddLogging();
         services.AddSingleton<ITelemetryInitializer, TelemetryInitializer>();
         services.AddApplicationInsightsTelemetryWorkerService();
@@ -35,7 +39,11 @@ var host = new HostBuilder()
                 var rawConfig = config["test_config"];
                 if (!string.IsNullOrWhiteSpace(rawConfig))
                 {
-                    options.Tests = JsonConvert.DeserializeObject<List<TestConfig>>(rawConfig) ?? new();
+                    var jsonOptions = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                    };
+                    options.Tests = JsonSerializer.Deserialize<List<TestConfig>>(rawConfig, jsonOptions) ?? [];
                 }
             }
 
