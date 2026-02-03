@@ -99,15 +99,15 @@ availability_tests = [
   {
     workload     = "portal-servers-integration"
     environment  = "prd"
-    app          = "app-portal-servers-int-prd-uksouth-01-bxxyivgotrxya"
+    app          = "app-portal-servers-int-prd-uksouth-v1-66febf7b1b9d"
     app_insights = "portal"
-    uri          = "https://app-portal-servers-int-prd-uksouth-01-bxxyivgotrxya.azurewebsites.net/api/health"
+    uri          = "https://app-portal-servers-int-prd-uksouth-v1-66febf7b1b9d.azurewebsites.net/api/health"
     severity     = "high"
   },
   {
     workload     = "portal-sync"
     environment  = "prd"
-    app          = "fn-portal-sync-func-prd-uksouth-50d011333089"
+    app          = "fn-portal-sync-func-prd-uksouth-50d011333089"`
     app_insights = "portal"
     uri          = "https://fn-portal-sync-func-prd-uksouth-50d011333089.azurewebsites.net/api/health"
     severity     = "critical"
