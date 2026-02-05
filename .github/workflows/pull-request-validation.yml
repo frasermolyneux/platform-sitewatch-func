@@ -6,12 +6,12 @@ on:
     branches:
       - main
 
-permissions:
-  id-token: write # This is required for Az CLI Login
-  contents: read # This is required for actions/checkout
 
 jobs:
   dependency-review:
+    permissions:
+      contents: read
+      pull-requests: read
     runs-on: ubuntu-latest
 
     steps:
@@ -22,6 +22,9 @@ jobs:
       uses: actions/dependency-review-action@v4
 
   dotnet-func-ci:
+    permissions:
+      id-token: write # This is required for Az CLI Login
+      contents: read # This is required for actions/checkout
     runs-on: ubuntu-latest
 
     steps:
@@ -34,6 +37,9 @@ jobs:
         src-folder: "src"
 
   terraform-plan-and-apply-dev:
+    permissions:
+      id-token: write # This is required for Az CLI Login
+      contents: read # This is required for actions/checkout
     environment: Development
     runs-on: ubuntu-latest
 
@@ -68,6 +74,9 @@ jobs:
       func_apps: ${{ steps.terraform-output.outputs.func_apps }}
 
   function-app-deploy-dev:
+    permissions:
+      id-token: write # This is required for Az CLI Login
+      contents: read # This is required for actions/checkout
     environment: Development
     runs-on: ubuntu-latest
     needs: [dotnet-func-ci, terraform-plan-and-apply-dev]
@@ -92,6 +101,9 @@ jobs:
         AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
   terraform-plan-prd:
+    permissions:
+      id-token: write # This is required for Az CLI Login
+      contents: read # This is required for actions/checkout
     if: github.actor != 'dependabot[bot]' # dependabot context has no permissions to prod so skip this check
     environment: Production
     runs-on: ubuntu-latest

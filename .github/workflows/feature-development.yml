@@ -6,12 +6,12 @@ on:
     branches:
       - "feature/*"
 
-permissions:
-  id-token: write # Required for Az CLI Login
-  contents: read # Required for actions/checkout
 
 jobs:
   dotnet-func-ci:
+    permissions:
+      id-token: write # Required for Az CLI Login
+      contents: read # Required for actions/checkout
     runs-on: ubuntu-latest
 
     steps:
@@ -24,6 +24,9 @@ jobs:
         src-folder: "src"
 
   terraform-plan-and-apply-dev:
+    permissions:
+      id-token: write # Required for Az CLI Login
+      contents: read # Required for actions/checkout
     environment: Development
     runs-on: ubuntu-latest
 
@@ -58,6 +61,9 @@ jobs:
       func_apps: ${{ steps.terraform-output.outputs.func_apps }}
 
   function-app-deploy-dev:
+    permissions:
+      id-token: write # Required for Az CLI Login
+      contents: read # Required for actions/checkout
     environment: Development
     runs-on: ubuntu-latest
     needs: [dotnet-func-ci, terraform-plan-and-apply-dev]
