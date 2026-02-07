@@ -9,7 +9,7 @@ on:
     - cron: "0 3 * * 4" # Every Thursday at 3am
 
 
-permissions: read-all
+permissions: {}
 
 concurrency: # Prevent multiple workflow runs at once
   group: ${{ github.workflow }}

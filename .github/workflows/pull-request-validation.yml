@@ -7,7 +7,7 @@ on:
       - main
 
 
-permissions: read-all
+permissions: {}
 
 jobs:
   dependency-review:

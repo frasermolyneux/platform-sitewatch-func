@@ -6,7 +6,7 @@ on:
     - cron: "40 1 * * *"
 
 
-permissions: read-all
+permissions: {}
 
 jobs:
   terraform-destroy-dev:
