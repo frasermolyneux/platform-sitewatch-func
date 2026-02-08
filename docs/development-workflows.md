@@ -88,14 +88,14 @@ graph TD
 
 ## Quick Reference
 
-| Scenario           | Workflow       | Trigger                  | Terraform     | Deploy  |
-| ------------------ | -------------- | ------------------------ | ------------- | ------- |
-| Feature commit     | build-and-test | Push to feature/bugfix   | ❌            | ❌       |
+| Scenario           | Workflow       | Trigger                  | Terraform     | Deploy               |
+| ------------------ | -------------- | ------------------------ | ------------- | -------------------- |
+| Feature commit     | build-and-test | Push to feature/bugfix   | ❌             | ❌                    |
 | PR validation      | pr-verify      | PR to main               | Dev plan      | Optional dev (label) |
-| Merge to main      | deploy-prd     | Push to main             | Dev+Prd apply | Dev+Prd |
-| Weekly maintenance | deploy-prd     | Thursday 3am UTC         | Prd apply     | Prd     |
-| Manual dev refresh | deploy-dev     | Manual dispatch          | Dev apply     | Dev     |
-| Code quality       | codequality    | Monday 3am UTC + PR/push | ❌            | ❌       |
+| Merge to main      | deploy-prd     | Push to main             | Dev+Prd apply | Dev+Prd              |
+| Weekly maintenance | deploy-prd     | Thursday 3am UTC         | Prd apply     | Prd                  |
+| Manual dev refresh | deploy-dev     | Manual dispatch          | Dev apply     | Dev                  |
+| Code quality       | codequality    | Monday 3am UTC + PR/push | ❌             | ❌                    |
 
 ## Environment Secrets
 
