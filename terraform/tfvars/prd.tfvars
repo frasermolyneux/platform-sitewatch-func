@@ -107,7 +107,7 @@ availability_tests = [
   {
     workload     = "portal-sync"
     environment  = "prd"
-    app          = "fn-portal-sync-func-prd-uksouth-50d011333089"`
+    app          = "fn-portal-sync-func-prd-uksouth-50d011333089"
     app_insights = "portal"
     uri          = "https://fn-portal-sync-func-prd-uksouth-50d011333089.azurewebsites.net/api/health"
     severity     = "critical"
