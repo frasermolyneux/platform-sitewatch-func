@@ -139,6 +139,7 @@ jobs:
       needs.terraform-plan-and-apply-prd.result == 'success' &&
       (needs.function-app-deploy-dev.result == 'success' || needs.function-app-deploy-dev.result == 'skipped')
     strategy:
+      max-parallel: 1
       matrix:
         func_app: ${{ fromJSON(needs.terraform-plan-and-apply-prd.outputs.func_apps) }}
     steps:
