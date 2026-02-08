@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Retry;
 
-namespace MX.Platform.SitewatchFunc;
+namespace MX.Platform.SiteWatch.App;
 
 public partial class ExternalHealthCheck
 {

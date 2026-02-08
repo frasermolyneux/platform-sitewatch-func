@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
-using MX.Platform.SitewatchFunc;
+using MX.Platform.SiteWatch.App;
 
 var host = new HostBuilder()
     .ConfigureAppConfiguration(builder =>

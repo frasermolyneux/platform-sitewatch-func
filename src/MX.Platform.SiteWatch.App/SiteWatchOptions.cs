@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace MX.Platform.SitewatchFunc;
+namespace MX.Platform.SiteWatch.App;
 
 public class SiteWatchOptions
 {

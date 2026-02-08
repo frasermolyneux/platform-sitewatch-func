@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace MX.Platform.SitewatchFunc;
+namespace MX.Platform.SiteWatch.App;
 
 public class TestConfig
 {

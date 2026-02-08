@@ -1,7 +1,7 @@
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.Extensibility;
 
-namespace MX.Platform.SitewatchFunc;
+namespace MX.Platform.SiteWatch.App;
 
 public class TelemetryInitializer : ITelemetryInitializer
 {
