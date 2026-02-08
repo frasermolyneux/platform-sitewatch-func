@@ -1,0 +1,152 @@
+name: Deploy Prod
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * 4"
+  push:
+    branches:
+      - main
+
+permissions: {}
+
+jobs:
+  build-and-test:
+    permissions:
+      contents: read
+      id-token: write
+    if: github.event_name != 'push' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: frasermolyneux/actions/dotnet-func-ci@main
+        with:
+          dotnet-project: "MX.Platform.SiteWatch.App"
+          dotnet-version: 9.0.x
+          src-folder: "src"
+
+  terraform-plan-and-apply-dev:
+    permissions:
+      contents: read
+      id-token: write
+    if: github.event_name == 'push'
+    environment: Development
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.repository }}-dev
+    steps:
+      - uses: frasermolyneux/actions/terraform-plan-and-apply@main
+        with:
+          terraform-folder: "terraform"
+          terraform-var-file: "tfvars/dev.tfvars"
+          terraform-backend-file: "backends/dev.backend.hcl"
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - id: terraform-output
+        shell: bash
+        run: |
+          cd terraform
+          echo "func_apps=$(terraform output -json func_apps)" >> $GITHUB_OUTPUT
+        env:
+          ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          ARM_USE_AZUREAD: true
+          ARM_USE_OIDC: true
+
+    outputs:
+      func_apps: ${{ steps.terraform-output.outputs.func_apps }}
+
+  function-app-deploy-dev:
+    permissions:
+      contents: read
+      id-token: write
+    if: github.event_name == 'push'
+    environment: Development
+    needs: [build-and-test, terraform-plan-and-apply-dev]
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.repository }}-dev
+    strategy:
+      matrix:
+        func_app: ${{ fromJSON(needs.terraform-plan-and-apply-dev.outputs.func_apps) }}
+    steps:
+      - uses: frasermolyneux/actions/deploy-function-app@main
+        with:
+          function-app-artifact-name: "MX.Platform.SiteWatch.App"
+          function-app-name: ${{ matrix.func_app.name }}
+          function-app-resource-group: ${{ matrix.func_app.resource_group_name }}
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+  terraform-plan-and-apply-prd:
+    permissions:
+      contents: read
+      id-token: write
+    environment: Production
+    needs:
+      - build-and-test
+      - terraform-plan-and-apply-dev
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.repository }}-prd
+    if: |
+      always() &&
+      needs.build-and-test.result == 'success' &&
+      (needs.terraform-plan-and-apply-dev.result == 'success' || needs.terraform-plan-and-apply-dev.result == 'skipped')
+    steps:
+      - uses: frasermolyneux/actions/terraform-plan-and-apply@main
+        with:
+          terraform-folder: "terraform"
+          terraform-var-file: "tfvars/prd.tfvars"
+          terraform-backend-file: "backends/prd.backend.hcl"
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - id: terraform-output
+        shell: bash
+        run: |
+          cd terraform
+          echo "func_apps=$(terraform output -json func_apps)" >> $GITHUB_OUTPUT
+        env:
+          ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          ARM_USE_AZUREAD: true
+          ARM_USE_OIDC: true
+
+    outputs:
+      func_apps: ${{ steps.terraform-output.outputs.func_apps }}
+
+  function-app-deploy-prd:
+    permissions:
+      contents: read
+      id-token: write
+    environment: Production
+    needs:
+      - build-and-test
+      - terraform-plan-and-apply-prd
+      - function-app-deploy-dev
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.repository }}-prd
+    if: |
+      always() &&
+      needs.terraform-plan-and-apply-prd.result == 'success' &&
+      (needs.function-app-deploy-dev.result == 'success' || needs.function-app-deploy-dev.result == 'skipped')
+    strategy:
+      matrix:
+        func_app: ${{ fromJSON(needs.terraform-plan-and-apply-prd.outputs.func_apps) }}
+    steps:
+      - uses: frasermolyneux/actions/deploy-function-app@main
+        with:
+          function-app-artifact-name: "MX.Platform.SiteWatch.App"
+          function-app-name: ${{ matrix.func_app.name }}
+          function-app-resource-group: ${{ matrix.func_app.resource_group_name }}
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
