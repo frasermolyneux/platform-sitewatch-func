@@ -1,14 +1,17 @@
-name: Deploy Prod
+name: Deploy Prd
 
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: "0 3 * * 4"
   push:
     branches:
       - main
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * 4"
 
 permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
 
 jobs:
   build-and-test:

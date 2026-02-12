@@ -11,7 +11,7 @@ updates:
 
   - package-ecosystem: "terraform"
     assignees: ["frasermolyneux"]
-    directories: ["/terraform"]
+    directory: "/terraform"
     schedule:
       interval: "daily"
 
