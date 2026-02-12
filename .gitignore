@@ -399,3 +399,6 @@ FodyWeavers.xsd
 
 terraform/.terraform.lock.hcl
 terraform/.terraform/*
+
+# Shared Copilot configuration checked out during copilot-setup-steps
+.github-copilot/
