@@ -52,9 +52,9 @@ subscriptions = {
 }
 
 geolocation_app_insights = {
-  subscription_id     = "d3b204ab-7c2b-47f7-8d5a-de19e85591e7"
-  resource_group_name = "rg-geolocation-prd-uksouth-01"
-  name                = "ai-geolocation-prd-uksouth-01"
+  subscription_id     = "903b6685-c12a-4703-ac54-7ec1ff15ca43"
+  resource_group_name = "rg-geo-location-prd-swedencentral"
+  name                = "ai-geo-location-prd-swedencentral"
 }
 
 portal_app_insights = {
@@ -123,17 +123,17 @@ availability_tests = [
   {
     workload     = "geolocation"
     environment  = "prd"
-    app          = "app-geolocation-api-prd-uksouth-01-queggvl6v5yta"
+    app          = "app-geo-location-api-prd-swedencentral-6f10eaac01a0"
     app_insights = "geolocation"
-    uri          = "https://app-geolocation-api-prd-uksouth-01-queggvl6v5yta.azurewebsites.net/api/health"
+    uri          = "https://app-geo-location-api-prd-swedencentral-6f10eaac01a0.azurewebsites.net/api/health"
     severity     = "high"
   },
   {
     workload     = "geolocation"
     environment  = "prd"
-    app          = "app-geolocation-web-prd-uksouth-01-ndrrqvrn34qke"
+    app          = "app-geo-location-web-prd-swedencentral-6f10eaac01a0"
     app_insights = "geolocation"
-    uri          = "https://app-geolocation-web-prd-uksouth-01-ndrrqvrn34qke.azurewebsites.net/api/health"
+    uri          = "https://app-geo-location-web-prd-swedencentral-6f10eaac01a0.azurewebsites.net/api/health"
     severity     = "high"
   },
   {
