@@ -125,7 +125,7 @@ availability_tests = [
     environment  = "prd"
     app          = "app-geo-location-api-prd-swedencentral-6f10eaac01a0"
     app_insights = "geolocation"
-    uri          = "https://app-geo-location-api-prd-swedencentral-6f10eaac01a0.azurewebsites.net/api/health"
+    uri          = "https://app-geo-location-api-prd-swedencentral-6f10eaac01a0.azurewebsites.net/v1.0/health"
     severity     = "high"
   },
   {
