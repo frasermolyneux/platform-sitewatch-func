@@ -77,7 +77,7 @@ availability_tests = [
     environment  = "prd"
     app          = "app-portal-repo-prd-uksouth-v1-655b79d54d89"
     app_insights = "portal"
-    uri          = "https://app-portal-repo-prd-uksouth-v1-655b79d54d89.azurewebsites.net/api/health"
+    uri          = "https://app-portal-repo-prd-uksouth-v1-655b79d54d89.azurewebsites.net/v1.0/health"
     severity     = "critical"
   },
   {
@@ -85,7 +85,7 @@ availability_tests = [
     environment  = "prd"
     app          = "app-portal-repo-prd-uksouth-v2-655b79d54d89"
     app_insights = "portal"
-    uri          = "https://app-portal-repo-prd-uksouth-v2-655b79d54d89.azurewebsites.net/api/health"
+    uri          = "https://app-portal-repo-prd-uksouth-v2-655b79d54d89.azurewebsites.net/v2.0/health"
     severity     = "critical"
   },
   {
