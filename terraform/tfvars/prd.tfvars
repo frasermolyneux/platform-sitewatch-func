@@ -101,7 +101,7 @@ availability_tests = [
     environment  = "prd"
     app          = "app-portal-servers-int-prd-uksouth-v1-66febf7b1b9d"
     app_insights = "portal"
-    uri          = "https://app-portal-servers-int-prd-uksouth-v1-66febf7b1b9d.azurewebsites.net/api/health"
+    uri          = "https://app-portal-servers-int-prd-uksouth-v1-66febf7b1b9d.azurewebsites.net/v1.0/health"
     severity     = "high"
   },
   {
