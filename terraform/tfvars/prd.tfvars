@@ -69,7 +69,7 @@ availability_tests = [
     environment  = "prd"
     app          = "fn-portal-event-ingest-prd-uksouth-3a23e3c6dc68"
     app_insights = "portal"
-    uri          = "https://fn-portal-event-ingest-prd-uksouth-3a23e3c6dc68.azurewebsites.net/api/health"
+    uri          = "https://fn-portal-event-ingest-prd-uksouth-3a23e3c6dc68.azurewebsites.net/api/v1/health"
     severity     = "critical"
   },
   {
