@@ -37,6 +37,8 @@ resource "azurerm_linux_function_app" "app" {
 
   app_settings = merge(
     {
+      "REGION_NAME" = each.value.location
+
       "ApplicationInsightsAgent_EXTENSION_VERSION" = "~3"
 
       "default_appinsights_connection_string" = azurerm_application_insights.ai[var.locations[0]].connection_string
