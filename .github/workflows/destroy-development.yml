@@ -3,7 +3,7 @@ name: Destroy Development
 on:
   workflow_dispatch:
   schedule:
-    - cron: "40 1 * * *"
+    - cron: "45 23 * * *"
 
 permissions: {}
 
