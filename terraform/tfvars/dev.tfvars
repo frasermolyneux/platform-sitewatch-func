@@ -2,7 +2,7 @@ environment   = "dev"
 workload_name = "platform-sitewatch-func"
 locations     = ["uksouth", "eastus"]
 
-subscription_id = "d68448b0-9947-46d7-8771-baa331a3063a"
+subscription_id = "6cad03c1-9e98-4160-8ebe-64dd30f1bbc7"
 
 subscriptions = {
   sub-enterprise-devtest-legacy = {
@@ -11,7 +11,7 @@ subscriptions = {
   },
   sub-visualstudio-enterprise = {
     name            = "sub-visualstudio-enterprise"
-    subscription_id = "d68448b0-9947-46d7-8771-baa331a3063a"
+    subscription_id = "6cad03c1-9e98-4160-8ebe-64dd30f1bbc7"
   },
   sub-molyneux-me-dev = {
     name            = "sub-molyneux-me-dev"
