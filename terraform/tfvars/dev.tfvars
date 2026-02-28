@@ -1,6 +1,6 @@
 environment   = "dev"
 workload_name = "platform-sitewatch-func"
-locations     = ["swedencentral", "eastus"]
+locations     = ["swedencentral", "westus2"]
 
 subscription_id = "6cad03c1-9e98-4160-8ebe-64dd30f1bbc7"
 
