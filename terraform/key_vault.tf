@@ -1,5 +1,5 @@
 resource "azurerm_key_vault" "kv" {
-  name                = format("kv-%s-%s", random_id.environment_id.hex, var.locations[0])
+  name                = substr(format("kv-%s-%s", random_id.environment_id.hex, var.locations[0]), 0, 24)
   location            = var.locations[0]
   resource_group_name = data.azurerm_resource_group.rg[var.locations[0]].name
   tenant_id           = data.azurerm_client_config.current.tenant_id
