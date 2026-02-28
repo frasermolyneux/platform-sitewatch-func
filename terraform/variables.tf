@@ -10,7 +10,7 @@ variable "workload_name" {
 
 variable "locations" {
   type    = list(string)
-  default = ["uksouth", "eastus"]
+  default = ["swedencentral", "eastus"]
 }
 
 variable "subscription_id" {}
