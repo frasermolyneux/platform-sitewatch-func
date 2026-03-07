@@ -7,4 +7,6 @@ resource "azurerm_service_plan" "sp" {
 
   os_type  = "Linux"
   sku_name = var.app_service_plan.sku
+
+  tags = var.tags
 }
