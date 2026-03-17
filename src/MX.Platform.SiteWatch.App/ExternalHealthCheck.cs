@@ -51,7 +51,7 @@ public partial class ExternalHealthCheck
     }
 
     [Function(nameof(ExternalHealthCheck))]
-    public async Task Run([TimerTrigger("0,30 * * * * *")] TimerInfo timer, ILogger log, FunctionContext executionContext)
+    public async Task Run([TimerTrigger("0 */5 * * * *")] TimerInfo timer, ILogger log, FunctionContext executionContext)
     {
         var options = optionsMonitor.CurrentValue;
 
