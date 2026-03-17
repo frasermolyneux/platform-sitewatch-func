@@ -13,7 +13,7 @@ resource "azurerm_monitor_metric_alert" "availability" {
     metric_name      = "availabilityResults/availabilityPercentage"
     aggregation      = "Average"
     operator         = "LessThan"
-    threshold        = 95
+    threshold        = 80
 
     dimension {
       name     = "availabilityResult/name"
