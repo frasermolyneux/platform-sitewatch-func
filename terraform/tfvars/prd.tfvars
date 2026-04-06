@@ -65,14 +65,6 @@ portal_app_insights = {
 
 availability_tests = [
   {
-    workload     = "portal-event-ingest"
-    environment  = "prd"
-    app          = "fn-portal-event-ingest-prd-uksouth-3a23e3c6dc68"
-    app_insights = "portal"
-    uri          = "https://fn-portal-event-ingest-prd-uksouth-3a23e3c6dc68.azurewebsites.net/api/v1/health"
-    severity     = "critical"
-  },
-  {
     workload     = "portal-repository-v1"
     environment  = "prd"
     app          = "app-portal-repo-prd-uksouth-v1-655b79d54d89"
