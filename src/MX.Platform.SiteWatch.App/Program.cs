@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 using MX.Platform.SiteWatch.App;
+using MX.Observability.ApplicationInsights.WorkerService;
 
 var host = new HostBuilder()
     .ConfigureAppConfiguration(builder =>
@@ -28,6 +29,7 @@ var host = new HostBuilder()
         services.AddSingleton<ITelemetryInitializer, TelemetryInitializer>();
         services.AddApplicationInsightsTelemetryWorkerService();
         services.ConfigureFunctionsApplicationInsights();
+        services.AddObservability();
         services.AddHealthChecks();
 
         services.Configure<SiteWatchOptions>(config.GetSection("SiteWatch"));
