@@ -40,9 +40,7 @@ resource "azurerm_linux_function_app" "app" {
       "REGION_NAME" = each.value.location
 
       "ApplicationInsightsAgent_EXTENSION_VERSION" = "~3"
-
-      "default_appinsights_connection_string" = azurerm_application_insights.ai[var.locations[0]].connection_string
-      "SiteWatch__Telemetry__default"         = azurerm_application_insights.ai[var.locations[0]].connection_string
+      "APPLICATIONINSIGHTS_CONNECTION_STRING"      = azurerm_application_insights.ai[each.key].connection_string
 
       "test_config"                      = jsonencode(var.availability_tests)
       "SiteWatch__DisableExternalChecks" = tostring(var.disable_external_checks)
@@ -54,12 +52,10 @@ resource "azurerm_linux_function_app" "app" {
       "DiagnosticServices_EXTENSION_VERSION" = "~3"
     },
     var.portal_app_insights == null ? {} : {
-      "portal_appinsights_connection_string" = data.azurerm_application_insights.portal[0].connection_string
-      "SiteWatch__Telemetry__portal"         = data.azurerm_application_insights.portal[0].connection_string
+      "SiteWatch__Telemetry__portal" = data.azurerm_application_insights.portal[0].connection_string
     },
     var.geolocation_app_insights == null ? {} : {
-      "geolocation_appinsights_connection_string" = data.azurerm_application_insights.geolocation[0].connection_string
-      "SiteWatch__Telemetry__geolocation"         = data.azurerm_application_insights.geolocation[0].connection_string
+      "SiteWatch__Telemetry__geolocation" = data.azurerm_application_insights.geolocation[0].connection_string
     }
   )
 

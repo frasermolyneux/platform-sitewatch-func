@@ -1,16 +1,11 @@
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
-using Microsoft.ApplicationInsights;
-using Microsoft.ApplicationInsights.Channel;
-using Microsoft.ApplicationInsights.DataContracts;
-using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
+using MX.Observability.OpenTelemetry.Availability;
 using Polly;
-using Polly.Retry;
 
 namespace MX.Platform.SiteWatch.App;
 
@@ -18,36 +13,19 @@ public partial class ExternalHealthCheck
 {
     private readonly IConfiguration configuration;
     private readonly IOptionsMonitor<SiteWatchOptions> optionsMonitor;
-    private readonly TelemetryClient telemetryClient;
-    private readonly ConcurrentDictionary<string, TelemetryClient> telemetryClients = new();
     private readonly HttpClient httpClient;
+    private readonly IAvailabilityTelemetry availabilityTelemetry;
 
-    private readonly AsyncRetryPolicy<HttpResponseMessage> retryPolicy;
-
-    public ExternalHealthCheck(IConfiguration configuration, TelemetryClient telemetryClient, IOptionsMonitor<SiteWatchOptions> optionsMonitor, IHttpClientFactory httpClientFactory)
+    public ExternalHealthCheck(
+        IConfiguration configuration,
+        IOptionsMonitor<SiteWatchOptions> optionsMonitor,
+        IHttpClientFactory httpClientFactory,
+        IAvailabilityTelemetry availabilityTelemetry)
     {
         this.configuration = configuration;
-        this.telemetryClient = telemetryClient;
         this.optionsMonitor = optionsMonitor;
         this.httpClient = httpClientFactory.CreateClient("SiteWatch");
-
-        retryPolicy = Policy
-            .Handle<HttpRequestException>()
-            .Or<TaskCanceledException>()
-            .OrResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
-            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1 << retryAttempt),
-                onRetry: (outcome, timespan, retryAttempt, context) =>
-                {
-                    var message = $"Request failed with {outcome.Exception?.Message ?? outcome.Result.StatusCode.ToString()}. Waiting {timespan} before next retry. Retry attempt {retryAttempt}";
-                    telemetryClient.TrackException(outcome.Exception ?? new Exception(message));
-
-                    if (outcome.Result != null && !outcome.Result.IsSuccessStatusCode)
-                    {
-                        // Note: This is a synchronous callback from Polly, cannot be made async
-                        // Using GetAwaiter().GetResult() as a last resort in error logging path
-                        telemetryClient.TrackTrace(outcome.Result.Content.ReadAsStringAsync().GetAwaiter().GetResult());
-                    }
-                });
+        this.availabilityTelemetry = availabilityTelemetry;
     }
 
     [Function(nameof(ExternalHealthCheck))]
@@ -71,79 +49,66 @@ public partial class ExternalHealthCheck
 
         foreach (var testConfig in testConfigs)
         {
-            var telemetryClient = GetTelemetryClient(options, testConfig.AppInsights);
-
-            if (telemetryClient == null)
-            {
-                log.LogWarning("No telemetry connection configured for app insights key '{AppInsights}'. Skipping test '{App}'.", testConfig.AppInsights, testConfig.App);
-                continue;
-            }
             string location = Environment.GetEnvironmentVariable("REGION_NAME") ?? "Unknown";
-
-            var availability = new AvailabilityTelemetry
-            {
-                Name = testConfig.App,
-                RunLocation = location,
-                Success = false,
-            };
-
-            availability.Context.Operation.ParentId = Activity.Current?.SpanId.ToString();
-            availability.Context.Operation.Id = Activity.Current?.RootId;
             var stopwatch = Stopwatch.StartNew();
+            using var activity = new Activity("AvailabilityCheck");
+            activity.AddTag("app", testConfig.App);
+            activity.AddTag("location", location);
+            activity.Start();
 
             try
             {
-                using var activity = new Activity("AvailabilityContext");
-                activity.Start();
-                availability.Id = activity.SpanId.ToString();
-                await RunAvailabilityTestAsync(log, testConfig.Uri);
-                availability.Success = true;
+                var uri = ReplaceTokens(testConfig.Uri, configuration);
+                await RunAvailabilityTestAsync(log, uri);
+
+                stopwatch.Stop();
+                availabilityTelemetry.Track(new AvailabilityTelemetryEntry
+                {
+                    Name = testConfig.App,
+                    Success = true,
+                    Duration = stopwatch.Elapsed,
+                    RunLocation = location,
+                    Message = "OK",
+                    Target = testConfig.AppInsights
+                });
+
+                log.LogInformation(
+                    "Availability check passed for '{App}' at '{Location}' in {Duration}ms",
+                    testConfig.App,
+                    location,
+                    stopwatch.ElapsedMilliseconds);
             }
             catch (Exception ex)
             {
-                availability.Message = ex.Message;
+                stopwatch.Stop();
+                availabilityTelemetry.Track(new AvailabilityTelemetryEntry
+                {
+                    Name = testConfig.App,
+                    Success = false,
+                    Duration = stopwatch.Elapsed,
+                    RunLocation = location,
+                    Message = ex.Message,
+                    Target = testConfig.AppInsights
+                });
+
+                log.LogError(
+                    ex,
+                    "Availability check failed for '{App}' at '{Location}' after {Duration}ms: {Message}",
+                    testConfig.App,
+                    location,
+                    stopwatch.ElapsedMilliseconds,
+                    ex.Message);
             }
             finally
             {
-                stopwatch.Stop();
-                availability.Duration = stopwatch.Elapsed;
-                availability.Timestamp = DateTimeOffset.UtcNow;
-                telemetryClient.TrackAvailability(availability);
-                telemetryClient.Flush();
+                activity.Stop();
             }
-
         }
     }
 
-    private TelemetryClient? GetTelemetryClient(SiteWatchOptions options, string appInsightsKey)
+    private static string ReplaceTokens(string uriTemplate, IConfiguration configuration)
     {
-        var key = string.IsNullOrWhiteSpace(appInsightsKey) ? "default" : appInsightsKey;
-
-        if (telemetryClients.TryGetValue(key, out var existingClient))
-        {
-            return existingClient;
-        }
-
-        if (!options.Telemetry.TryGetValue(key, out var connectionString))
-        {
-            if (!options.Telemetry.TryGetValue("default", out connectionString))
-            {
-                return null;
-            }
-        }
-
-        var telemetryConfiguration = new TelemetryConfiguration
-        {
-            ConnectionString = connectionString,
-            TelemetryChannel = new InMemoryChannel(),
-        };
-
-        var client = new TelemetryClient(telemetryConfiguration);
-        return telemetryClients.GetOrAdd(key, client);
-    }
-
-    private async Task RunAvailabilityTestAsync(ILogger log, string uri)
-    {
+        var uri = uriTemplate;
         var matches = TokenPattern().Matches(uri);
 
         foreach (Match match in matches)
@@ -154,18 +119,53 @@ public partial class ExternalHealthCheck
 
                 if (configuration[token] == null)
                 {
-                    throw new Exception($"Token {token} not found in configuration");
+                    throw new Exception($"Token '{token}' not found in configuration.");
                 }
 
                 uri = uri.Replace($"%{token}%", configuration[token]);
             }
         }
 
+        return uri;
+    }
+
+    private async Task RunAvailabilityTestAsync(ILogger log, string uri)
+    {
+        var retryPolicy = Policy
+            .Handle<HttpRequestException>()
+            .Or<TaskCanceledException>()
+            .OrResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
+            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(1 << retryAttempt),
+                onRetry: (outcome, timespan, retryAttempt, context) =>
+                {
+                    if (outcome.Exception is not null)
+                    {
+                        log.LogWarning(
+                            outcome.Exception,
+                            "Request retry {RetryAttempt}: {ExceptionType} - waiting {WaitTime}",
+                            retryAttempt,
+                            outcome.Exception.GetType().Name,
+                            timespan);
+                    }
+                    else if (outcome.Result is not null)
+                    {
+                        log.LogWarning(
+                            "Request retry {RetryAttempt}: status {StatusCode} - waiting {WaitTime}",
+                            retryAttempt,
+                            outcome.Result.StatusCode,
+                            timespan);
+                    }
+                });
+
         var response = await retryPolicy.ExecuteAsync(() => httpClient.GetAsync(uri));
         if (!response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadAsStringAsync();
-            telemetryClient.TrackTrace(content);
+            log.LogError(
+                "Failed to get a successful response from {Uri}, received {StatusCode}: {Content}",
+                uri,
+                response.StatusCode,
+                content);
             throw new Exception($"Failed to get a successful response from {uri}, received {response.StatusCode}");
         }
     }
