@@ -11,6 +11,12 @@ namespace MX.Platform.SiteWatch.App;
 
 public partial class ExternalHealthCheck
 {
+    // Cap the number of concurrent availability checks per timer tick. Tuned so that even with a
+    // worst-case retry sequence (4 attempts x 5s timeout + 2/4/8s backoff ~= 34s per failing test),
+    // a single batch with a handful of healthy tests does not stall the whole tick. Keep this in
+    // mind when adding tests: total wall-clock per tick is roughly ceil(tests / 5) * worst-case.
+    private const int MaxConcurrentChecks = 5;
+
     private readonly IConfiguration configuration;
     private readonly IOptionsMonitor<SiteWatchOptions> optionsMonitor;
     private readonly HttpClient httpClient;
@@ -29,7 +35,7 @@ public partial class ExternalHealthCheck
     }
 
     [Function(nameof(ExternalHealthCheck))]
-    public async Task Run([TimerTrigger("0 */5 * * * *")] TimerInfo timer, ILogger log, FunctionContext executionContext)
+    public async Task Run([TimerTrigger("0,30 * * * * *")] TimerInfo timer, ILogger log, FunctionContext executionContext)
     {
         var options = optionsMonitor.CurrentValue;
 
@@ -47,62 +53,86 @@ public partial class ExternalHealthCheck
             return;
         }
 
-        foreach (var testConfig in testConfigs)
+        var location = Environment.GetEnvironmentVariable("REGION_NAME") ?? "Unknown";
+        var parallelOptions = new ParallelOptions
         {
-            string location = Environment.GetEnvironmentVariable("REGION_NAME") ?? "Unknown";
-            var stopwatch = Stopwatch.StartNew();
-            using var activity = new Activity("AvailabilityCheck");
-            activity.AddTag("app", testConfig.App);
-            activity.AddTag("location", location);
-            activity.Start();
+            MaxDegreeOfParallelism = MaxConcurrentChecks,
+            CancellationToken = executionContext.CancellationToken,
+        };
 
-            try
+        await Parallel.ForEachAsync(
+            testConfigs,
+            parallelOptions,
+            (testConfig, ct) => ExecuteTestAsync(testConfig, location, log, ct));
+    }
+
+    private async ValueTask ExecuteTestAsync(TestConfig testConfig, string location, ILogger log, CancellationToken cancellationToken)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        using var activity = new Activity("AvailabilityCheck");
+        activity.AddTag("app", testConfig.App);
+        activity.AddTag("location", location);
+        activity.Start();
+
+        try
+        {
+            var uri = ReplaceTokens(testConfig.Uri, configuration);
+            await RunAvailabilityTestAsync(log, uri, cancellationToken);
+
+            stopwatch.Stop();
+            availabilityTelemetry.Track(new AvailabilityTelemetryEntry
             {
-                var uri = ReplaceTokens(testConfig.Uri, configuration);
-                await RunAvailabilityTestAsync(log, uri);
+                Name = testConfig.App,
+                Success = true,
+                Duration = stopwatch.Elapsed,
+                RunLocation = location,
+                Message = "OK",
+                Target = testConfig.AppInsights
+            });
 
-                stopwatch.Stop();
-                availabilityTelemetry.Track(new AvailabilityTelemetryEntry
-                {
-                    Name = testConfig.App,
-                    Success = true,
-                    Duration = stopwatch.Elapsed,
-                    RunLocation = location,
-                    Message = "OK",
-                    Target = testConfig.AppInsights
-                });
-
-                log.LogInformation(
-                    "Availability check passed for '{App}' at '{Location}' in {Duration}ms",
-                    testConfig.App,
-                    location,
-                    stopwatch.ElapsedMilliseconds);
-            }
-            catch (Exception ex)
+            log.LogInformation(
+                "Availability check passed for '{App}' at '{Location}' in {Duration}ms",
+                testConfig.App,
+                location,
+                stopwatch.ElapsedMilliseconds);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Host shutdown (or parent Parallel.ForEachAsync cancellation): the token was signalled
+            // externally, so this is not a real availability failure. Skip the telemetry write to
+            // avoid contaminating availabilityResults with spurious failures during graceful exit.
+            // Note: HttpClient timeout throws TaskCanceledException with IsCancellationRequested=false
+            // on the supplied token, so timeout failures still flow through the catch below.
+            log.LogInformation(
+                "Availability check for '{App}' at '{Location}' cancelled by host after {Duration}ms",
+                testConfig.App,
+                location,
+                stopwatch.ElapsedMilliseconds);
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            availabilityTelemetry.Track(new AvailabilityTelemetryEntry
             {
-                stopwatch.Stop();
-                availabilityTelemetry.Track(new AvailabilityTelemetryEntry
-                {
-                    Name = testConfig.App,
-                    Success = false,
-                    Duration = stopwatch.Elapsed,
-                    RunLocation = location,
-                    Message = ex.Message,
-                    Target = testConfig.AppInsights
-                });
+                Name = testConfig.App,
+                Success = false,
+                Duration = stopwatch.Elapsed,
+                RunLocation = location,
+                Message = ex.Message,
+                Target = testConfig.AppInsights
+            });
 
-                log.LogError(
-                    ex,
-                    "Availability check failed for '{App}' at '{Location}' after {Duration}ms: {Message}",
-                    testConfig.App,
-                    location,
-                    stopwatch.ElapsedMilliseconds,
-                    ex.Message);
-            }
-            finally
-            {
-                activity.Stop();
-            }
+            log.LogError(
+                ex,
+                "Availability check failed for '{App}' at '{Location}' after {Duration}ms: {Message}",
+                testConfig.App,
+                location,
+                stopwatch.ElapsedMilliseconds,
+                ex.Message);
+        }
+        finally
+        {
+            activity.Stop();
         }
     }
 
@@ -129,7 +159,7 @@ public partial class ExternalHealthCheck
         return uri;
     }
 
-    private async Task RunAvailabilityTestAsync(ILogger log, string uri)
+    private async Task RunAvailabilityTestAsync(ILogger log, string uri, CancellationToken cancellationToken)
     {
         var retryPolicy = Policy
             .Handle<HttpRequestException>()
@@ -157,10 +187,13 @@ public partial class ExternalHealthCheck
                     }
                 });
 
-        var response = await retryPolicy.ExecuteAsync(() => httpClient.GetAsync(uri));
+        var response = await retryPolicy.ExecuteAsync(
+            ct => httpClient.GetAsync(uri, ct),
+            cancellationToken);
+
         if (!response.IsSuccessStatusCode)
         {
-            var content = await response.Content.ReadAsStringAsync();
+            var content = await response.Content.ReadAsStringAsync(cancellationToken);
             log.LogError(
                 "Failed to get a successful response from {Uri}, received {StatusCode}: {Content}",
                 uri,

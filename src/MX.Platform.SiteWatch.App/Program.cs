@@ -41,7 +41,7 @@ var host = new HostBuilder()
 
         services.AddHttpClient("SiteWatch", client =>
         {
-            client.Timeout = TimeSpan.FromSeconds(10);
+            client.Timeout = TimeSpan.FromSeconds(5);
         });
         services.AddLogging();
         services.AddObservability();
