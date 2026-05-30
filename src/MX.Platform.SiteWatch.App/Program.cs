@@ -84,7 +84,7 @@ var host = new HostBuilder()
         // with the SiteWatch multi-target router.
         services.RemoveAll<IAvailabilityTelemetry>();
         services.AddSingleton<IAvailabilityTelemetry>(sp => new MultiTargetAvailabilityTelemetry(
-            sp.GetRequiredService<ILogger<OpenTelemetryAvailabilityTelemetry>>(),
+            sp.GetRequiredService<ILoggerFactory>(),
             targets,
             ServiceName));
     })

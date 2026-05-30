@@ -29,18 +29,30 @@ internal sealed class MultiTargetAvailabilityTelemetry : IAvailabilityTelemetry,
     private readonly List<ILoggerFactory> targetFactories;
     private bool disposed;
 
+    internal MultiTargetAvailabilityTelemetry(
+        IAvailabilityTelemetry defaultEmitter,
+        IDictionary<string, IAvailabilityTelemetry> targetEmitters)
+    {
+        this.defaultEmitter = defaultEmitter ?? throw new ArgumentNullException(nameof(defaultEmitter));
+        ArgumentNullException.ThrowIfNull(targetEmitters);
+
+        this.targetEmitters = new Dictionary<string, IAvailabilityTelemetry>(targetEmitters, StringComparer.OrdinalIgnoreCase);
+        targetFactories = [];
+    }
+
     public MultiTargetAvailabilityTelemetry(
-        ILogger<OpenTelemetryAvailabilityTelemetry> defaultLogger,
+        ILoggerFactory loggerFactory,
         AvailabilityTelemetryTargets targets,
         string serviceName)
     {
-        ArgumentNullException.ThrowIfNull(defaultLogger);
+        ArgumentNullException.ThrowIfNull(loggerFactory);
         ArgumentNullException.ThrowIfNull(targets);
 
         if (string.IsNullOrWhiteSpace(serviceName))
             throw new ArgumentException("Service name must be provided.", nameof(serviceName));
 
-        defaultEmitter = new OpenTelemetryAvailabilityTelemetry(defaultLogger);
+        defaultEmitter = new OpenTelemetryAvailabilityTelemetry(
+            loggerFactory.CreateLogger<OpenTelemetryAvailabilityTelemetry>());
         targetEmitters = new Dictionary<string, IAvailabilityTelemetry>(StringComparer.OrdinalIgnoreCase);
         targetFactories = new List<ILoggerFactory>(targets.Targets.Count);
 
