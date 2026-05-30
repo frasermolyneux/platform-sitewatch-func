@@ -11,7 +11,7 @@ public sealed class MultiTargetAvailabilityTelemetryTests
     {
         using var loggerFactory = LoggerFactory.Create(_ => { });
         var targets = new AvailabilityTelemetryTargets();
-        using var telemetry = new MultiTargetAvailabilityTelemetry(loggerFactory, targets, "Sitewatch FuncApp");
+        using var telemetry = new MultiTargetAvailabilityTelemetry(loggerFactory, targets, "SiteWatch FuncApp");
         var entry = CreateEntry();
 
         var exception = Record.Exception(() => telemetry.Track(entry));
