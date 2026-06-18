@@ -87,7 +87,11 @@ public partial class ExternalHealthCheck
                 Duration = stopwatch.Elapsed,
                 RunLocation = location,
                 Message = "OK",
-                Target = testConfig.AppInsights
+                Target = testConfig.AppInsights,
+                Properties = new Dictionary<string, string>
+                {
+                    ["component"] = string.IsNullOrWhiteSpace(testConfig.Component) ? testConfig.App : testConfig.Component
+                }
             });
 
             log.LogInformation(
@@ -119,7 +123,11 @@ public partial class ExternalHealthCheck
                 Duration = stopwatch.Elapsed,
                 RunLocation = location,
                 Message = ex.Message,
-                Target = testConfig.AppInsights
+                Target = testConfig.AppInsights,
+                Properties = new Dictionary<string, string>
+                {
+                    ["component"] = string.IsNullOrWhiteSpace(testConfig.Component) ? testConfig.App : testConfig.Component
+                }
             });
 
             log.LogError(
