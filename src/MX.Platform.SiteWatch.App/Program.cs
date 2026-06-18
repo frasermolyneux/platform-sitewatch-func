@@ -81,12 +81,16 @@ var host = new HostBuilder()
         }
 
         // Replace the default IAvailabilityTelemetry singleton registered by AddObservability()
-        // with the SiteWatch multi-target router.
+        // with the SiteWatch multi-target router. Passing the host connection string creates a
+        // dedicated log exporter for the default emitter, isolating availability from the host
+        // pipeline's LogRecordFilterProcessor. Combined with Azure Monitor's built-in exemption
+        // of availabilityResults from ingestion sampling, this guarantees 100% retention.
         services.RemoveAll<IAvailabilityTelemetry>();
         services.AddSingleton<IAvailabilityTelemetry>(sp => new MultiTargetAvailabilityTelemetry(
             sp.GetRequiredService<ILoggerFactory>(),
             targets,
-            ServiceName));
+            ServiceName,
+            connectionString));
     })
     .Build();
 

@@ -44,6 +44,15 @@ internal sealed class MultiTargetAvailabilityTelemetry : IAvailabilityTelemetry,
         ILoggerFactory loggerFactory,
         AvailabilityTelemetryTargets targets,
         string serviceName)
+        : this(loggerFactory, targets, serviceName, connectionString: null)
+    {
+    }
+
+    public MultiTargetAvailabilityTelemetry(
+        ILoggerFactory loggerFactory,
+        AvailabilityTelemetryTargets targets,
+        string serviceName,
+        string? connectionString)
     {
         ArgumentNullException.ThrowIfNull(loggerFactory);
         ArgumentNullException.ThrowIfNull(targets);
@@ -51,20 +60,14 @@ internal sealed class MultiTargetAvailabilityTelemetry : IAvailabilityTelemetry,
         if (string.IsNullOrWhiteSpace(serviceName))
             throw new ArgumentException("Service name must be provided.", nameof(serviceName));
 
-        defaultEmitter = new OpenTelemetryAvailabilityTelemetry(
-            loggerFactory.CreateLogger<OpenTelemetryAvailabilityTelemetry>());
-        targetEmitters = new Dictionary<string, IAvailabilityTelemetry>(StringComparer.OrdinalIgnoreCase);
-        targetFactories = new List<ILoggerFactory>(targets.Targets.Count);
-
-        foreach (var (name, connectionString) in targets.Targets)
+        // When a connection string is provided, create a dedicated LoggerFactory for the default
+        // emitter that bypasses the host OTEL pipeline (and its LogRecordFilterProcessor). This
+        // ensures availability telemetry is never dropped by host-level log processors or filter
+        // rules. Azure Monitor ingestion sampling (sampling_percentage on the AI resource) does
+        // not apply to availabilityResults, so the combination guarantees 100% retention.
+        if (!string.IsNullOrWhiteSpace(connectionString))
         {
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Availability target names must be non-empty.", nameof(targets));
-
-            if (string.IsNullOrWhiteSpace(connectionString))
-                throw new ArgumentException($"Connection string for availability target '{name}' must be non-empty.", nameof(targets));
-
-            var factory = LoggerFactory.Create(builder =>
+            var defaultFactory = LoggerFactory.Create(builder =>
             {
                 builder.AddOpenTelemetry(options =>
                 {
@@ -76,9 +79,62 @@ internal sealed class MultiTargetAvailabilityTelemetry : IAvailabilityTelemetry,
                 });
             });
 
-            targetFactories.Add(factory);
-            var logger = factory.CreateLogger<OpenTelemetryAvailabilityTelemetry>();
-            targetEmitters[name] = new OpenTelemetryAvailabilityTelemetry(logger);
+            targetFactories = new List<ILoggerFactory>(targets.Targets.Count + 1) { defaultFactory };
+            defaultEmitter = new OpenTelemetryAvailabilityTelemetry(
+                defaultFactory.CreateLogger<OpenTelemetryAvailabilityTelemetry>());
+        }
+        else
+        {
+            targetFactories = new List<ILoggerFactory>(targets.Targets.Count);
+            defaultEmitter = new OpenTelemetryAvailabilityTelemetry(
+                loggerFactory.CreateLogger<OpenTelemetryAvailabilityTelemetry>());
+        }
+
+        targetEmitters = new Dictionary<string, IAvailabilityTelemetry>(StringComparer.OrdinalIgnoreCase);
+
+        try
+        {
+            foreach (var (name, targetConnectionString) in targets.Targets)
+            {
+                if (string.IsNullOrWhiteSpace(name))
+                    throw new ArgumentException("Availability target names must be non-empty.", nameof(targets));
+
+                if (string.IsNullOrWhiteSpace(targetConnectionString))
+                    throw new ArgumentException($"Connection string for availability target '{name}' must be non-empty.", nameof(targets));
+
+                var factory = LoggerFactory.Create(builder =>
+                {
+                    builder.AddOpenTelemetry(options =>
+                    {
+                        options.IncludeFormattedMessage = true;
+                        options.IncludeScopes = false;
+                        options.ParseStateValues = false;
+                        options.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName));
+                        options.AddAzureMonitorLogExporter(o => o.ConnectionString = targetConnectionString);
+                    });
+                });
+
+                targetFactories.Add(factory);
+                var logger = factory.CreateLogger<OpenTelemetryAvailabilityTelemetry>();
+                targetEmitters[name] = new OpenTelemetryAvailabilityTelemetry(logger);
+            }
+        }
+        catch
+        {
+            foreach (var factory in targetFactories)
+            {
+                try
+                {
+                    factory.Dispose();
+                }
+                catch
+                {
+                    // Best-effort cleanup: swallow dispose failures to avoid masking the
+                    // original constructor exception that triggered this cleanup path.
+                }
+            }
+
+            throw;
         }
     }
 

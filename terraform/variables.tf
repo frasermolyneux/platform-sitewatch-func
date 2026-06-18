@@ -40,6 +40,7 @@ variable "availability_tests" {
     app_insights = string
     uri          = string
     severity     = string
+    component    = optional(string)
   }))
 }
 
