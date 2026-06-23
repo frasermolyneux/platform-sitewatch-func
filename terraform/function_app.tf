@@ -30,10 +30,11 @@ resource "azurerm_linux_function_app" "app" {
 
     application_insights_connection_string = azurerm_application_insights.ai[each.key].connection_string
 
-    ftps_state          = "Disabled"
-    always_on           = false // Not possible with consumption tier
-    minimum_tls_version = "1.2"
-    health_check_path   = "/api/health/live"
+    ftps_state                        = "Disabled"
+    always_on                         = false // Not possible with consumption tier
+    minimum_tls_version               = "1.2"
+    health_check_path                 = "/api/health/live"
+    health_check_eviction_time_in_min = 5
   }
 
   app_settings = merge(
