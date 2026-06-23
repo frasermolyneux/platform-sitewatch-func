@@ -33,6 +33,7 @@ resource "azurerm_linux_function_app" "app" {
     ftps_state          = "Disabled"
     always_on           = false // Not possible with consumption tier
     minimum_tls_version = "1.2"
+    health_check_path   = "/api/health/live"
   }
 
   app_settings = merge(
