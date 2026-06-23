@@ -21,27 +21,30 @@ public partial class ExternalHealthCheck
     private readonly IOptionsMonitor<SiteWatchOptions> optionsMonitor;
     private readonly HttpClient httpClient;
     private readonly IAvailabilityTelemetry availabilityTelemetry;
+    private readonly ILogger<ExternalHealthCheck> logger;
 
     public ExternalHealthCheck(
         IConfiguration configuration,
         IOptionsMonitor<SiteWatchOptions> optionsMonitor,
         IHttpClientFactory httpClientFactory,
-        IAvailabilityTelemetry availabilityTelemetry)
+        IAvailabilityTelemetry availabilityTelemetry,
+        ILogger<ExternalHealthCheck> logger)
     {
         this.configuration = configuration;
         this.optionsMonitor = optionsMonitor;
         this.httpClient = httpClientFactory.CreateClient("SiteWatch");
         this.availabilityTelemetry = availabilityTelemetry;
+        this.logger = logger;
     }
 
     [Function(nameof(ExternalHealthCheck))]
-    public async Task Run([TimerTrigger("0,30 * * * * *")] TimerInfo timer, ILogger log, FunctionContext executionContext)
+    public async Task Run([TimerTrigger("0,30 * * * * *")] TimerInfo timer, FunctionContext executionContext)
     {
         var options = optionsMonitor.CurrentValue;
 
         if (options.DisableExternalChecks)
         {
-            log.LogInformation("External checks disabled by configuration; skipping run.");
+            logger.LogInformation("External checks disabled by configuration; skipping run.");
             return;
         }
 
@@ -49,7 +52,7 @@ public partial class ExternalHealthCheck
 
         if (testConfigs.Count == 0)
         {
-            log.LogInformation("No availability tests configured; skipping run.");
+            logger.LogInformation("No availability tests configured; skipping run.");
             return;
         }
 
@@ -63,10 +66,10 @@ public partial class ExternalHealthCheck
         await Parallel.ForEachAsync(
             testConfigs,
             parallelOptions,
-            (testConfig, ct) => ExecuteTestAsync(testConfig, location, log, ct));
+            (testConfig, ct) => ExecuteTestAsync(testConfig, location, ct));
     }
 
-    private async ValueTask ExecuteTestAsync(TestConfig testConfig, string location, ILogger log, CancellationToken cancellationToken)
+    private async ValueTask ExecuteTestAsync(TestConfig testConfig, string location, CancellationToken cancellationToken)
     {
         var stopwatch = Stopwatch.StartNew();
         using var activity = new Activity("AvailabilityCheck");
@@ -77,7 +80,7 @@ public partial class ExternalHealthCheck
         try
         {
             var uri = ReplaceTokens(testConfig.Uri, configuration);
-            await RunAvailabilityTestAsync(log, uri, cancellationToken);
+            await RunAvailabilityTestAsync(uri, cancellationToken);
 
             stopwatch.Stop();
             availabilityTelemetry.Track(new AvailabilityTelemetryEntry
@@ -94,7 +97,7 @@ public partial class ExternalHealthCheck
                 }
             });
 
-            log.LogInformation(
+            logger.LogInformation(
                 "Availability check passed for '{App}' at '{Location}' in {Duration}ms",
                 testConfig.App,
                 location,
@@ -107,7 +110,7 @@ public partial class ExternalHealthCheck
             // avoid contaminating availabilityResults with spurious failures during graceful exit.
             // Note: HttpClient timeout throws TaskCanceledException with IsCancellationRequested=false
             // on the supplied token, so timeout failures still flow through the catch below.
-            log.LogInformation(
+            logger.LogInformation(
                 "Availability check for '{App}' at '{Location}' cancelled by host after {Duration}ms",
                 testConfig.App,
                 location,
@@ -130,7 +133,7 @@ public partial class ExternalHealthCheck
                 }
             });
 
-            log.LogError(
+            logger.LogError(
                 ex,
                 "Availability check failed for '{App}' at '{Location}' after {Duration}ms: {Message}",
                 testConfig.App,
@@ -167,7 +170,7 @@ public partial class ExternalHealthCheck
         return uri;
     }
 
-    private async Task RunAvailabilityTestAsync(ILogger log, string uri, CancellationToken cancellationToken)
+    private async Task RunAvailabilityTestAsync(string uri, CancellationToken cancellationToken)
     {
         var retryPolicy = Policy
             .Handle<HttpRequestException>()
@@ -178,7 +181,7 @@ public partial class ExternalHealthCheck
                 {
                     if (outcome.Exception is not null)
                     {
-                        log.LogWarning(
+                        logger.LogWarning(
                             outcome.Exception,
                             "Request retry {RetryAttempt}: {ExceptionType} - waiting {WaitTime}",
                             retryAttempt,
@@ -187,7 +190,7 @@ public partial class ExternalHealthCheck
                     }
                     else if (outcome.Result is not null)
                     {
-                        log.LogWarning(
+                        logger.LogWarning(
                             "Request retry {RetryAttempt}: status {StatusCode} - waiting {WaitTime}",
                             retryAttempt,
                             outcome.Result.StatusCode,
@@ -202,7 +205,7 @@ public partial class ExternalHealthCheck
         if (!response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            log.LogError(
+            logger.LogError(
                 "Failed to get a successful response from {Uri}, received {StatusCode}: {Content}",
                 uri,
                 response.StatusCode,
