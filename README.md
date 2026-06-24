@@ -1,14 +1,14 @@
 # platform-sitewatch-func
 
-[![Code Quality](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/codequality.yml/badge.svg)](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/codequality.yml)
 [![Build and Test](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/build-and-test.yml)
-[![PR Verify](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/pr-verify.yml/badge.svg)](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/pr-verify.yml)
+[![Code Quality](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/codequality.yml/badge.svg)](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/codequality.yml)
+[![Copilot Setup Steps](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/copilot-setup-steps.yml/badge.svg)](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/copilot-setup-steps.yml)
+[![Dependabot Auto-Merge](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/dependabot-automerge.yml/badge.svg)](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/dependabot-automerge.yml)
 [![Deploy Dev](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/deploy-dev.yml/badge.svg)](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/deploy-dev.yml)
 [![Deploy Prd](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/deploy-prd.yml/badge.svg)](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/deploy-prd.yml)
-[![Copilot Setup Steps](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/copilot-setup-steps.yml/badge.svg)](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/copilot-setup-steps.yml)
-[![Dependabot Automerge](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/dependabot-automerge.yml/badge.svg)](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/dependabot-automerge.yml)
 [![Destroy Development](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/destroy-development.yml/badge.svg)](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/destroy-development.yml)
 [![Destroy Environment](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/destroy-environment.yml/badge.svg)](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/destroy-environment.yml)
+[![PR Verify](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/pr-verify.yml/badge.svg)](https://github.com/frasermolyneux/platform-sitewatch-func/actions/workflows/pr-verify.yml)
 
 ## Documentation
 
