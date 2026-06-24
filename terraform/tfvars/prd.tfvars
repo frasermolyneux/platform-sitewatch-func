@@ -69,7 +69,7 @@ availability_tests = [
     environment  = "prd"
     app          = "app-portal-repo-prd-uksouth-v1-655b79d54d89"
     app_insights = "portal"
-    uri          = "https://app-portal-repo-prd-uksouth-v1-655b79d54d89.azurewebsites.net/v1.0/health"
+    uri          = "https://app-portal-repo-prd-uksouth-v1-655b79d54d89.azurewebsites.net/v1.0/health/live"
     severity     = "critical"
     component    = "xi.sitewatch.repository-api-v1"
   },
@@ -78,7 +78,7 @@ availability_tests = [
     environment  = "prd"
     app          = "app-portal-repo-prd-uksouth-v2-655b79d54d89"
     app_insights = "portal"
-    uri          = "https://app-portal-repo-prd-uksouth-v2-655b79d54d89.azurewebsites.net/v2.0/health"
+    uri          = "https://app-portal-repo-prd-uksouth-v2-655b79d54d89.azurewebsites.net/v2.0/health/live"
     severity     = "critical"
     component    = "xi.sitewatch.repository-api-v2"
   },
@@ -87,7 +87,7 @@ availability_tests = [
     environment  = "prd"
     app          = "fn-portal-repository-func-prd-uksouth-ad4109a900bb"
     app_insights = "portal"
-    uri          = "https://fn-portal-repository-func-prd-uksouth-ad4109a900bb.azurewebsites.net/api/health"
+    uri          = "https://fn-portal-repository-func-prd-uksouth-ad4109a900bb.azurewebsites.net/api/health/live"
     severity     = "high"
     component    = "xi.sitewatch.repository-func"
   },
@@ -96,7 +96,7 @@ availability_tests = [
     environment  = "prd"
     app          = "app-portal-servers-int-prd-uksouth-v1-66febf7b1b9d"
     app_insights = "portal"
-    uri          = "https://app-portal-servers-int-prd-uksouth-v1-66febf7b1b9d.azurewebsites.net/v1.0/health"
+    uri          = "https://app-portal-servers-int-prd-uksouth-v1-66febf7b1b9d.azurewebsites.net/v1.0/health/live"
     severity     = "high"
     component    = "xi.sitewatch.servers-integration-api"
   },
@@ -105,7 +105,7 @@ availability_tests = [
     environment  = "prd"
     app          = "fn-portal-sync-func-prd-uksouth-50d011333089"
     app_insights = "portal"
-    uri          = "https://fn-portal-sync-func-prd-uksouth-50d011333089.azurewebsites.net/api/health"
+    uri          = "https://fn-portal-sync-func-prd-uksouth-50d011333089.azurewebsites.net/api/health/live"
     severity     = "critical"
     component    = "xi.sitewatch.portal-sync"
   },
@@ -114,7 +114,7 @@ availability_tests = [
     environment  = "prd"
     app          = "app-portal-web-prd-uksouth-fe584e15256a"
     app_insights = "portal"
-    uri          = "https://app-portal-web-prd-uksouth-fe584e15256a.azurewebsites.net/api/health"
+    uri          = "https://app-portal-web-prd-uksouth-fe584e15256a.azurewebsites.net/api/health/live"
     severity     = "critical"
     component    = "xi.sitewatch.portal-web"
   },
@@ -123,7 +123,7 @@ availability_tests = [
     environment  = "prd"
     app          = "app-geo-location-api-prd-swedencentral-6f10eaac01a0"
     app_insights = "geolocation"
-    uri          = "https://app-geo-location-api-prd-swedencentral-6f10eaac01a0.azurewebsites.net/v1.0/health"
+    uri          = "https://app-geo-location-api-prd-swedencentral-6f10eaac01a0.azurewebsites.net/v1.0/health/live"
     severity     = "high"
     component    = "mx.sitewatch.geo-location-api"
   },
@@ -132,7 +132,7 @@ availability_tests = [
     environment  = "prd"
     app          = "app-geo-location-web-prd-swedencentral-6f10eaac01a0"
     app_insights = "geolocation"
-    uri          = "https://app-geo-location-web-prd-swedencentral-6f10eaac01a0.azurewebsites.net/api/health"
+    uri          = "https://app-geo-location-web-prd-swedencentral-6f10eaac01a0.azurewebsites.net/api/health/live"
     severity     = "high"
     component    = "mx.sitewatch.geo-location-web"
   },
