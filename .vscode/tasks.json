@@ -2,76 +2,83 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "clean (functions)",
+			"label": "dotnet: clean",
 			"command": "dotnet",
 			"args": [
 				"clean",
+				"${workspaceFolder}/src/MX.Platform.SiteWatch.sln",
 				"/property:GenerateFullPaths=true",
 				"/consoleloggerparameters:NoSummary"
 			],
 			"type": "process",
-			"problemMatcher": "$msCompile",
-			"options": {
-				"cwd": "${workspaceFolder}/src\\MX.Platform.SiteWatch.App"
-			}
+			"problemMatcher": "$msCompile"
 		},
 		{
-			"label": "build (functions)",
+			"label": "dotnet: build",
 			"command": "dotnet",
 			"args": [
 				"build",
+				"${workspaceFolder}/src/MX.Platform.SiteWatch.sln",
 				"/property:GenerateFullPaths=true",
 				"/consoleloggerparameters:NoSummary"
 			],
 			"type": "process",
-			"dependsOn": "clean (functions)",
+			"dependsOn": "dotnet: clean",
 			"group": {
 				"kind": "build",
 				"isDefault": true
 			},
-			"problemMatcher": "$msCompile",
-			"options": {
-				"cwd": "${workspaceFolder}/src\\MX.Platform.SiteWatch.App"
-			}
+			"problemMatcher": "$msCompile"
 		},
 		{
-			"label": "clean release (functions)",
+			"label": "dotnet: test",
 			"command": "dotnet",
 			"args": [
-				"clean",
-				"--configuration",
-				"Release",
+				"test",
+				"${workspaceFolder}/src/MX.Platform.SiteWatch.sln",
+				"--filter",
+				"FullyQualifiedName!~IntegrationTests",
 				"/property:GenerateFullPaths=true",
 				"/consoleloggerparameters:NoSummary"
 			],
 			"type": "process",
-			"problemMatcher": "$msCompile",
-			"options": {
-				"cwd": "${workspaceFolder}/src\\MX.Platform.SiteWatch.App"
-			}
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			},
+			"problemMatcher": "$msCompile"
 		},
 		{
-			"label": "publish (functions)",
+			"label": "dotnet: format",
+			"command": "dotnet",
+			"args": [
+				"format",
+				"${workspaceFolder}/src/MX.Platform.SiteWatch.sln",
+				"--verify-no-changes"
+			],
+			"type": "process",
+			"problemMatcher": "$msCompile"
+		},
+		{
+			"label": "dotnet: publish",
 			"command": "dotnet",
 			"args": [
 				"publish",
+				"${workspaceFolder}/src/MX.Platform.SiteWatch.App/MX.Platform.SiteWatch.App.csproj",
 				"--configuration",
 				"Release",
 				"/property:GenerateFullPaths=true",
 				"/consoleloggerparameters:NoSummary"
 			],
 			"type": "process",
-			"dependsOn": "clean release (functions)",
-			"problemMatcher": "$msCompile",
-			"options": {
-				"cwd": "${workspaceFolder}/src\\MX.Platform.SiteWatch.App"
-			}
+			"problemMatcher": "$msCompile"
 		},
 		{
+			"label": "func: host start",
 			"type": "func",
-			"dependsOn": "build (functions)",
+			"dependsOn": "dotnet: build",
 			"options": {
-				"cwd": "${workspaceFolder}/src\\MX.Platform.SiteWatch.App/bin/Debug/net10.0"
+				"cwd": "${workspaceFolder}/src/MX.Platform.SiteWatch.App/bin/Debug/net9.0"
 			},
 			"command": "host start",
 			"isBackground": true,

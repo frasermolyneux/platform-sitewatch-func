@@ -32,7 +32,7 @@ public partial class ExternalHealthCheck
     {
         this.configuration = configuration;
         this.optionsMonitor = optionsMonitor;
-        this.httpClient = httpClientFactory.CreateClient("SiteWatch");
+        httpClient = httpClientFactory.CreateClient("SiteWatch");
         this.availabilityTelemetry = availabilityTelemetry;
         this.logger = logger;
     }
