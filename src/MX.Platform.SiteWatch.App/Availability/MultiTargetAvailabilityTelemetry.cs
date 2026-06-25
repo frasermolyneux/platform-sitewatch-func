@@ -58,7 +58,9 @@ internal sealed class MultiTargetAvailabilityTelemetry : IAvailabilityTelemetry,
         ArgumentNullException.ThrowIfNull(targets);
 
         if (string.IsNullOrWhiteSpace(serviceName))
+        {
             throw new ArgumentException("Service name must be provided.", nameof(serviceName));
+        }
 
         // When a connection string is provided, create a dedicated LoggerFactory for the default
         // emitter that bypasses the host OTEL pipeline (and its LogRecordFilterProcessor). This
@@ -97,10 +99,14 @@ internal sealed class MultiTargetAvailabilityTelemetry : IAvailabilityTelemetry,
             foreach (var (name, targetConnectionString) in targets.Targets)
             {
                 if (string.IsNullOrWhiteSpace(name))
+                {
                     throw new ArgumentException("Availability target names must be non-empty.", nameof(targets));
+                }
 
                 if (string.IsNullOrWhiteSpace(targetConnectionString))
+                {
                     throw new ArgumentException($"Connection string for availability target '{name}' must be non-empty.", nameof(targets));
+                }
 
                 var factory = LoggerFactory.Create(builder =>
                 {
@@ -155,7 +161,9 @@ internal sealed class MultiTargetAvailabilityTelemetry : IAvailabilityTelemetry,
     public void Dispose()
     {
         if (disposed)
+        {
             return;
+        }
 
         // Best-effort flush: disposing each LoggerFactory should drain its Azure Monitor log
         // exporter, but in-flight batches may be lost during rapid host shutdown. Exceptions

@@ -30,7 +30,7 @@ public sealed class ComponentDimensionTests
 
         Assert.Equal(1, spy.TrackCount);
         Assert.NotNull(spy.LastEntry?.Properties);
-        Assert.True(spy.LastEntry!.Properties!.ContainsKey("component"));
+        Assert.True(spy.LastEntry.Properties.ContainsKey("component"));
         Assert.Equal("xi.sitewatch.repository-api-v1", spy.LastEntry.Properties["component"]);
     }
 
@@ -63,7 +63,7 @@ public sealed class ComponentDimensionTests
 
         Assert.Equal(1, spy.TrackCount);
         Assert.NotNull(spy.LastEntry?.Properties);
-        Assert.Equal("app-portal-repo-prd", spy.LastEntry!.Properties!["component"]);
+        Assert.Equal("app-portal-repo-prd", spy.LastEntry.Properties["component"]);
     }
 
     [Fact]
@@ -95,7 +95,7 @@ public sealed class ComponentDimensionTests
 
         Assert.Equal(1, spy.TrackCount);
         Assert.NotNull(spy.LastEntry?.Properties);
-        Assert.Equal("app-portal-repo-prd", spy.LastEntry!.Properties!["component"]);
+        Assert.Equal("app-portal-repo-prd", spy.LastEntry.Properties["component"]);
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public sealed class ComponentDimensionTests
 
         Assert.Equal(1, portalSpy.TrackCount);
         Assert.NotNull(portalSpy.LastEntry?.Properties);
-        Assert.Equal("xi.sitewatch.portal-web", portalSpy.LastEntry!.Properties!["component"]);
+        Assert.Equal("xi.sitewatch.portal-web", portalSpy.LastEntry.Properties["component"]);
     }
 
     private sealed class SpyAvailabilityTelemetry : IAvailabilityTelemetry
