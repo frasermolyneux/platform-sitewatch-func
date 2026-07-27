@@ -112,12 +112,12 @@ public sealed class MultiTargetAvailabilityTelemetryTests
         };
 
         telemetry.Track(entry);
-        telemetry.Dispose();
 
         var context = await listener.GetContextAsync().WaitAsync(TimeSpan.FromSeconds(15));
         var requestBody = await ReadRequestBody(context.Request);
         context.Response.StatusCode = (int)HttpStatusCode.OK;
         context.Response.Close();
+        telemetry.Dispose();
 
         using var document = JsonDocument.Parse(requestBody);
         var envelope = document.RootElement;

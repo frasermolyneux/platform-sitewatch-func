@@ -1,18 +1,16 @@
-using Azure.Monitor.OpenTelemetry.Exporter;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Logging;
 using MX.Observability.OpenTelemetry.Availability;
-using OpenTelemetry.Logs;
-using OpenTelemetry.Resources;
 
 namespace MX.Platform.SiteWatch.App.Availability;
 
 /// <summary>
 /// SiteWatch-specific multi-target availability emitter. Each configured target owns a dedicated
-/// <see cref="ILoggerFactory"/> wired to its own Azure Monitor log exporter, so a single
+/// <see cref="TelemetryClient"/> wired to its own Application Insights resource, so a single
 /// <see cref="AvailabilityTelemetryEntry"/> can be routed to one of several Application Insights
 /// resources based on <see cref="AvailabilityTelemetryEntry.Target"/>. When the target is null,
-/// empty, or unknown, the host's default <see cref="ILogger{TCategoryName}"/> is used (which is
-/// wired to the host's primary Azure Monitor exporter via the normal OTEL pipeline).
+/// empty, or unknown, the host's default Application Insights resource is used.
 /// <para>
 /// This lives in the SiteWatch project rather than in the shared observability NuGet because the
 /// "synthetic monitor reports availability into the watched service's Application Insights" pattern
@@ -21,12 +19,12 @@ namespace MX.Platform.SiteWatch.App.Availability;
 /// </summary>
 internal sealed class MultiTargetAvailabilityTelemetry : IAvailabilityTelemetry, IDisposable
 {
-    // _targetEmitters and _targetFactories are populated in the constructor and never mutated
+    // _targetEmitters and _ownedEmitters are populated in the constructor and never mutated
     // afterwards (Dispose() clears them only once during shutdown). Track() is therefore safe to
     // call concurrently from multiple threads.
     private readonly IAvailabilityTelemetry defaultEmitter;
     private readonly Dictionary<string, IAvailabilityTelemetry> targetEmitters;
-    private readonly List<ILoggerFactory> targetFactories;
+    private readonly List<ApplicationInsightsAvailabilityTelemetry> ownedEmitters;
     private bool disposed;
 
     internal MultiTargetAvailabilityTelemetry(
@@ -37,7 +35,7 @@ internal sealed class MultiTargetAvailabilityTelemetry : IAvailabilityTelemetry,
         ArgumentNullException.ThrowIfNull(targetEmitters);
 
         this.targetEmitters = new Dictionary<string, IAvailabilityTelemetry>(targetEmitters, StringComparer.OrdinalIgnoreCase);
-        targetFactories = [];
+        ownedEmitters = [];
     }
 
     public MultiTargetAvailabilityTelemetry(
@@ -62,32 +60,16 @@ internal sealed class MultiTargetAvailabilityTelemetry : IAvailabilityTelemetry,
             throw new ArgumentException("Service name must be provided.", nameof(serviceName));
         }
 
-        // When a connection string is provided, create a dedicated LoggerFactory for the default
-        // emitter that bypasses the host OTEL pipeline (and its LogRecordFilterProcessor). This
-        // ensures availability telemetry is never dropped by host-level log processors or filter
-        // rules. Azure Monitor ingestion sampling (sampling_percentage on the AI resource) does
-        // not apply to availabilityResults, so the combination guarantees 100% retention.
+        ownedEmitters = new List<ApplicationInsightsAvailabilityTelemetry>(targets.Targets.Count + 1);
+
         if (!string.IsNullOrWhiteSpace(connectionString))
         {
-            var defaultFactory = LoggerFactory.Create(builder =>
-            {
-                builder.AddOpenTelemetry(options =>
-                {
-                    options.IncludeFormattedMessage = true;
-                    options.IncludeScopes = false;
-                    options.ParseStateValues = false;
-                    options.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName));
-                    options.AddAzureMonitorLogExporter(o => o.ConnectionString = connectionString);
-                });
-            });
-
-            targetFactories = new List<ILoggerFactory>(targets.Targets.Count + 1) { defaultFactory };
-            defaultEmitter = new OpenTelemetryAvailabilityTelemetry(
-                defaultFactory.CreateLogger<OpenTelemetryAvailabilityTelemetry>());
+            var emitter = CreateEmitter(connectionString, serviceName);
+            ownedEmitters.Add(emitter);
+            defaultEmitter = emitter;
         }
         else
         {
-            targetFactories = new List<ILoggerFactory>(targets.Targets.Count);
             defaultEmitter = new OpenTelemetryAvailabilityTelemetry(
                 loggerFactory.CreateLogger<OpenTelemetryAvailabilityTelemetry>());
         }
@@ -108,30 +90,18 @@ internal sealed class MultiTargetAvailabilityTelemetry : IAvailabilityTelemetry,
                     throw new ArgumentException($"Connection string for availability target '{name}' must be non-empty.", nameof(targets));
                 }
 
-                var factory = LoggerFactory.Create(builder =>
-                {
-                    builder.AddOpenTelemetry(options =>
-                    {
-                        options.IncludeFormattedMessage = true;
-                        options.IncludeScopes = false;
-                        options.ParseStateValues = false;
-                        options.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName));
-                        options.AddAzureMonitorLogExporter(o => o.ConnectionString = targetConnectionString);
-                    });
-                });
-
-                targetFactories.Add(factory);
-                var logger = factory.CreateLogger<OpenTelemetryAvailabilityTelemetry>();
-                targetEmitters[name] = new OpenTelemetryAvailabilityTelemetry(logger);
+                var emitter = CreateEmitter(targetConnectionString, serviceName);
+                ownedEmitters.Add(emitter);
+                targetEmitters[name] = emitter;
             }
         }
         catch
         {
-            foreach (var factory in targetFactories)
+            foreach (var emitter in ownedEmitters)
             {
                 try
                 {
-                    factory.Dispose();
+                    emitter.Dispose();
                 }
                 catch
                 {
@@ -142,6 +112,22 @@ internal sealed class MultiTargetAvailabilityTelemetry : IAvailabilityTelemetry,
 
             throw;
         }
+    }
+
+    private static ApplicationInsightsAvailabilityTelemetry CreateEmitter(string connectionString, string serviceName)
+    {
+        var configuration = TelemetryConfiguration.CreateDefault();
+        configuration.ConnectionString = connectionString;
+
+        // Availability checks run every 30 seconds and feed one-minute alert evaluations. Send
+        // each result immediately instead of allowing the default channel batch interval to add
+        // avoidable alert latency. The production volume is bounded to one item per configured
+        // check and region per interval.
+        configuration.TelemetryChannel.DeveloperMode = true;
+
+        var client = new TelemetryClient(configuration);
+        client.Context.Cloud.RoleName = serviceName;
+        return new ApplicationInsightsAvailabilityTelemetry(client, configuration);
     }
 
     public void Track(AvailabilityTelemetryEntry entry)
@@ -165,15 +151,11 @@ internal sealed class MultiTargetAvailabilityTelemetry : IAvailabilityTelemetry,
             return;
         }
 
-        // Best-effort flush: disposing each LoggerFactory should drain its Azure Monitor log
-        // exporter, but in-flight batches may be lost during rapid host shutdown. Exceptions
-        // here are swallowed to avoid masking the app exit; observe missing entries through the
-        // host's own Application Insights resource if shutdown delivery becomes a concern.
-        foreach (var factory in targetFactories)
+        foreach (var emitter in ownedEmitters)
         {
             try
             {
-                factory.Dispose();
+                emitter.Dispose();
             }
             catch
             {
@@ -181,7 +163,7 @@ internal sealed class MultiTargetAvailabilityTelemetry : IAvailabilityTelemetry,
             }
         }
 
-        targetFactories.Clear();
+        ownedEmitters.Clear();
         targetEmitters.Clear();
         disposed = true;
     }

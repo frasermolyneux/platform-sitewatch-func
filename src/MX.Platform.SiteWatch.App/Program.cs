@@ -67,8 +67,8 @@ var host = new HostBuilder()
 
         // Build the SiteWatch-local multi-target availability fan-out: each test's `app_insights`
         // value routes its availability entry to a named Application Insights connection string.
-        // Entries with an unknown or "default" target fall back to the host's own Application
-        // Insights sink (the one wired by AddObservability()).
+        // Entries with an unknown or "default" target fall back to a dedicated native client
+        // targeting the host's own Application Insights resource.
         var targets = new AvailabilityTelemetryTargets();
         foreach (var child in config.GetSection("SiteWatch:Telemetry").GetChildren())
         {
@@ -81,10 +81,9 @@ var host = new HostBuilder()
         }
 
         // Replace the default IAvailabilityTelemetry singleton registered by AddObservability()
-        // with the SiteWatch multi-target router. Passing the host connection string creates a
-        // dedicated log exporter for the default emitter, isolating availability from the host
-        // pipeline's LogRecordFilterProcessor. Combined with Azure Monitor's built-in exemption
-        // of availabilityResults from ingestion sampling, this guarantees 100% retention.
+        // with the SiteWatch multi-target router. Each destination uses the supported Application
+        // Insights TrackAvailability API and a dedicated channel, keeping availability outside the
+        // host OpenTelemetry log filtering and sampling pipeline.
         services.RemoveAll<IAvailabilityTelemetry>();
         services.AddSingleton<IAvailabilityTelemetry>(sp => new MultiTargetAvailabilityTelemetry(
             sp.GetRequiredService<ILoggerFactory>(),
