@@ -23,6 +23,8 @@ var host = new HostBuilder()
         builder.AddUserSecrets(Assembly.GetExecutingAssembly(), true);
     })
     .ConfigureFunctionsWorkerDefaults()
+    // Suppress named-client lifecycle logs without disabling OpenTelemetry HTTP dependency spans.
+    .ConfigureLogging(SiteWatchHttpClient.ConfigureLogging)
     .ConfigureServices((context, services) =>
     {
         var config = context.Configuration;
@@ -39,7 +41,7 @@ var host = new HostBuilder()
             Environment.SetEnvironmentVariable("OTEL_SERVICE_NAME", ServiceName);
         }
 
-        services.AddHttpClient("SiteWatch", client =>
+        services.AddHttpClient(SiteWatchHttpClient.Name, client =>
         {
             client.Timeout = TimeSpan.FromSeconds(5);
         });
