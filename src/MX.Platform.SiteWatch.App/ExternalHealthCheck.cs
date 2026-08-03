@@ -17,6 +17,11 @@ public partial class ExternalHealthCheck
     // mind when adding tests: total wall-clock per tick is roughly ceil(tests / 5) * worst-case.
     private const int MaxConcurrentChecks = 5;
 
+    // Sentinel value emitted as the `region` custom dimension when REGION_NAME is unavailable. Kept
+    // distinct from any real Azure region string so consumers never mistake a misconfigured probe
+    // for a healthy report from an expected region (see platform-status-web regional aggregation).
+    private const string UnknownRegion = "unknown";
+
     private readonly IConfiguration configuration;
     private readonly IOptionsMonitor<SiteWatchOptions> optionsMonitor;
     private readonly HttpClient httpClient;
@@ -56,7 +61,13 @@ public partial class ExternalHealthCheck
             return;
         }
 
-        var location = Environment.GetEnvironmentVariable("REGION_NAME") ?? "Unknown";
+        var location = Environment.GetEnvironmentVariable("REGION_NAME");
+        if (string.IsNullOrWhiteSpace(location))
+        {
+            logger.LogWarning("REGION_NAME app setting is missing or empty; emitting '{UnknownRegion}' region dimension for this tick.", UnknownRegion);
+            location = UnknownRegion;
+        }
+
         var parallelOptions = new ParallelOptions
         {
             MaxDegreeOfParallelism = MaxConcurrentChecks,
@@ -91,10 +102,7 @@ public partial class ExternalHealthCheck
                 RunLocation = location,
                 Message = "OK",
                 Target = testConfig.AppInsights,
-                Properties = new Dictionary<string, string>
-                {
-                    ["component"] = string.IsNullOrWhiteSpace(testConfig.Component) ? testConfig.App : testConfig.Component
-                }
+                Properties = BuildContractDimensions(testConfig, location)
             });
 
             logger.LogInformation(
@@ -127,10 +135,7 @@ public partial class ExternalHealthCheck
                 RunLocation = location,
                 Message = ex.Message,
                 Target = testConfig.AppInsights,
-                Properties = new Dictionary<string, string>
-                {
-                    ["component"] = string.IsNullOrWhiteSpace(testConfig.Component) ? testConfig.App : testConfig.Component
-                }
+                Properties = BuildContractDimensions(testConfig, location)
             });
 
             logger.LogError(
@@ -145,6 +150,23 @@ public partial class ExternalHealthCheck
         {
             activity.Stop();
         }
+    }
+
+    /// <summary>
+    /// Builds the explicit, stable telemetry contract dimensions emitted on every availability result:
+    /// <c>componentId</c> (stable component identifier, falling back to <see cref="TestConfig.App"/>),
+    /// <c>siteId</c> (the tenant/site identifier, required on <see cref="TestConfig"/>), and
+    /// <c>region</c> (the resolved probe region). Consumers (platform-status-web) must filter on these
+    /// explicit dimensions rather than inferring tenant from a component-name prefix at query time.
+    /// </summary>
+    internal static Dictionary<string, string> BuildContractDimensions(TestConfig testConfig, string location)
+    {
+        return new Dictionary<string, string>
+        {
+            ["componentId"] = string.IsNullOrWhiteSpace(testConfig.Component) ? testConfig.App : testConfig.Component,
+            ["siteId"] = testConfig.Site,
+            ["region"] = location,
+        };
     }
 
     private static string ReplaceTokens(string uriTemplate, IConfiguration configuration)

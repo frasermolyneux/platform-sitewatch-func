@@ -71,6 +71,7 @@ availability_tests = [
     app_insights = "portal"
     uri          = "https://app-portal-repo-prd-uksouth-v1-655b79d54d89.azurewebsites.net/v1.0/health/live"
     severity     = "critical"
+    site         = "xi"
     component    = "xi.sitewatch.repository-api-v1"
   },
   {
@@ -80,6 +81,7 @@ availability_tests = [
     app_insights = "portal"
     uri          = "https://app-portal-repo-prd-uksouth-v2-655b79d54d89.azurewebsites.net/v2.0/health/live"
     severity     = "critical"
+    site         = "xi"
     component    = "xi.sitewatch.repository-api-v2"
   },
   {
@@ -89,6 +91,7 @@ availability_tests = [
     app_insights = "portal"
     uri          = "https://fn-portal-repository-func-prd-uksouth-ad4109a900bb.azurewebsites.net/api/health/live"
     severity     = "high"
+    site         = "xi"
     component    = "xi.sitewatch.repository-func"
   },
   {
@@ -98,6 +101,7 @@ availability_tests = [
     app_insights = "portal"
     uri          = "https://app-portal-servers-int-prd-uksouth-v1-66febf7b1b9d.azurewebsites.net/v1.0/health/live"
     severity     = "high"
+    site         = "xi"
     component    = "xi.sitewatch.servers-integration-api"
   },
   {
@@ -107,6 +111,7 @@ availability_tests = [
     app_insights = "portal"
     uri          = "https://fn-portal-sync-func-prd-uksouth-50d011333089.azurewebsites.net/api/health/live"
     severity     = "critical"
+    site         = "xi"
     component    = "xi.sitewatch.portal-sync"
   },
   {
@@ -116,6 +121,7 @@ availability_tests = [
     app_insights = "portal"
     uri          = "https://app-portal-web-prd-uksouth-fe584e15256a.azurewebsites.net/api/health/live"
     severity     = "critical"
+    site         = "xi"
     component    = "xi.sitewatch.portal-web"
   },
   {
@@ -125,6 +131,7 @@ availability_tests = [
     app_insights = "geolocation"
     uri          = "https://app-geo-location-api-prd-swedencentral-6f10eaac01a0.azurewebsites.net/v1.0/health/live"
     severity     = "high"
+    site         = "mx"
     component    = "mx.sitewatch.geo-location-api"
   },
   {
@@ -134,6 +141,7 @@ availability_tests = [
     app_insights = "geolocation"
     uri          = "https://app-geo-location-web-prd-swedencentral-6f10eaac01a0.azurewebsites.net/api/health/live"
     severity     = "high"
+    site         = "mx"
     component    = "mx.sitewatch.geo-location-web"
   },
   {
@@ -143,6 +151,7 @@ availability_tests = [
     app_insights = "default"
     uri          = "https://www.xtremeidiots.com"
     severity     = "critical"
+    site         = "xi"
     component    = "xi.sitewatch.forums-web"
   },
   {
@@ -152,6 +161,7 @@ availability_tests = [
     app_insights = "default"
     uri          = "https://www.xtremeidiots.com/applications/core/interface/task/web.php?key=%xtremeidiots_forums_task_key%"
     severity     = "high"
+    site         = "xi"
     component    = "xi.sitewatch.forums-tasks"
   },
   {
@@ -161,6 +171,7 @@ availability_tests = [
     app_insights = "default"
     uri          = "https://redirect.xtremeidiots.net"
     severity     = "high"
+    site         = "xi"
     component    = "xi.sitewatch.redirect"
   },
   {
@@ -170,6 +181,7 @@ availability_tests = [
     app_insights = "default"
     uri          = "https://bishopsbees.co.uk"
     severity     = "critical"
+    site         = "mx"
     component    = "mx.sitewatch.bishopsbees"
   },
   {
@@ -179,6 +191,7 @@ availability_tests = [
     app_insights = "default"
     uri          = "https://www.molyneux.me/"
     severity     = "low"
+    site         = "mx"
     component    = "mx.sitewatch.molyneux-me"
   }
 ]

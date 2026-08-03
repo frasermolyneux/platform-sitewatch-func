@@ -65,6 +65,8 @@ var host = new HostBuilder()
                     options.Tests = JsonSerializer.Deserialize<List<TestConfig>>(rawConfig, jsonOptions) ?? [];
                 }
             }
+
+            TestConfigValidator.Validate(options.Tests);
         });
 
         // Build the SiteWatch-local multi-target availability fan-out: each test's `app_insights`

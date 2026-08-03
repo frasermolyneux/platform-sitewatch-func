@@ -31,6 +31,7 @@ availability_tests = [
     app_insights = "default"
     uri          = "https://www.google.co.uk/"
     severity     = "informational"
+    site         = "xi"
     component    = "xi.sitewatch.synthetic-google"
   },
   {
@@ -40,6 +41,7 @@ availability_tests = [
     app_insights = "default"
     uri          = "https://www.microsoft.com/"
     severity     = "informational"
+    site         = "xi"
     component    = "xi.sitewatch.synthetic-microsoft"
   }
 ]

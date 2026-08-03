@@ -13,6 +13,7 @@
 ## Documentation
 
 * [Development Workflows](/docs/development-workflows.md) - Branch strategy, CI/CD triggers, and deployment flows.
+* [Telemetry Contract](/docs/telemetry-contract.md) - The explicit customDimensions contract shared with `platform-status-web`.
 
 ## Overview
 

@@ -3,103 +3,120 @@ using MX.Platform.SiteWatch.App.Availability;
 
 namespace MX.Platform.SiteWatch.App.Tests;
 
+/// <summary>
+/// Documents and verifies the explicit telemetry contract dimensions (<c>componentId</c>, <c>siteId</c>,
+/// <c>region</c>) that platform-status-web filters/aggregates on. Mirrors the fixture used in
+/// platform-status-web's AvailabilityQueryBuilder/ComponentStatusCalculator tests — keep both in sync.
+/// </summary>
 public sealed class ComponentDimensionTests
 {
     [Fact]
-    public void Track_WithComponent_IncludesComponentInProperties()
+    public void Track_WithComponent_IncludesContractDimensionsInProperties()
     {
         var spy = new SpyAvailabilityTelemetry();
         using var telemetry = new MultiTargetAvailabilityTelemetry(
             spy,
             new Dictionary<string, IAvailabilityTelemetry>(StringComparer.OrdinalIgnoreCase));
 
+        var testConfig = new TestConfig
+        {
+            App = "app-portal-repo-prd",
+            AppInsights = "portal",
+            Uri = "https://example.invalid/health/live",
+            Site = "xi",
+            Component = "xi.sitewatch.repository-api-v1"
+        };
+
         var entry = new AvailabilityTelemetryEntry
         {
-            Name = "app-portal-repo-prd",
+            Name = testConfig.App,
             Success = true,
             Duration = TimeSpan.FromMilliseconds(42),
             RunLocation = "uksouth",
             Message = "OK",
-            Properties = new Dictionary<string, string>
-            {
-                ["component"] = "xi.sitewatch.repository-api-v1"
-            }
+            Properties = ExternalHealthCheck.BuildContractDimensions(testConfig, "uksouth")
         };
 
         telemetry.Track(entry);
 
         Assert.Equal(1, spy.TrackCount);
         Assert.NotNull(spy.LastEntry?.Properties);
-        Assert.True(spy.LastEntry.Properties.ContainsKey("component"));
-        Assert.Equal("xi.sitewatch.repository-api-v1", spy.LastEntry.Properties["component"]);
+        Assert.Equal("xi.sitewatch.repository-api-v1", spy.LastEntry.Properties["componentId"]);
+        Assert.Equal("xi", spy.LastEntry.Properties["siteId"]);
+        Assert.Equal("uksouth", spy.LastEntry.Properties["region"]);
     }
 
     [Fact]
-    public void Track_WithoutComponent_FallsBackToAppName()
+    public void Track_WithoutComponent_FallsBackToAppNameForComponentId()
     {
-        // Simulates the ExternalHealthCheck fallback: when Component is null/empty, App is used
         var spy = new SpyAvailabilityTelemetry();
         using var telemetry = new MultiTargetAvailabilityTelemetry(
             spy,
             new Dictionary<string, IAvailabilityTelemetry>(StringComparer.OrdinalIgnoreCase));
 
-        string? component = null;
-        var fallbackComponent = string.IsNullOrWhiteSpace(component) ? "app-portal-repo-prd" : component;
+        var testConfig = new TestConfig
+        {
+            App = "app-portal-repo-prd",
+            AppInsights = "portal",
+            Uri = "https://example.invalid/health/live",
+            Site = "xi",
+            Component = null
+        };
 
         var entry = new AvailabilityTelemetryEntry
         {
-            Name = "app-portal-repo-prd",
+            Name = testConfig.App,
             Success = true,
             Duration = TimeSpan.FromMilliseconds(42),
             RunLocation = "uksouth",
             Message = "OK",
-            Properties = new Dictionary<string, string>
-            {
-                ["component"] = fallbackComponent
-            }
+            Properties = ExternalHealthCheck.BuildContractDimensions(testConfig, "uksouth")
         };
 
         telemetry.Track(entry);
 
         Assert.Equal(1, spy.TrackCount);
         Assert.NotNull(spy.LastEntry?.Properties);
-        Assert.Equal("app-portal-repo-prd", spy.LastEntry.Properties["component"]);
+        Assert.Equal("app-portal-repo-prd", spy.LastEntry.Properties["componentId"]);
+        Assert.Equal("xi", spy.LastEntry.Properties["siteId"]);
     }
 
     [Fact]
-    public void Track_WithEmptyComponent_FallsBackToAppName()
+    public void Track_WithEmptyComponent_FallsBackToAppNameForComponentId()
     {
-        // Verifies the whitespace/empty fallback path
         var spy = new SpyAvailabilityTelemetry();
         using var telemetry = new MultiTargetAvailabilityTelemetry(
             spy,
             new Dictionary<string, IAvailabilityTelemetry>(StringComparer.OrdinalIgnoreCase));
 
-        string? component = "  ";
-        var fallbackComponent = string.IsNullOrWhiteSpace(component) ? "app-portal-repo-prd" : component;
+        var testConfig = new TestConfig
+        {
+            App = "app-portal-repo-prd",
+            AppInsights = "portal",
+            Uri = "https://example.invalid/health/live",
+            Site = "xi",
+            Component = "  "
+        };
 
         var entry = new AvailabilityTelemetryEntry
         {
-            Name = "app-portal-repo-prd",
+            Name = testConfig.App,
             Success = true,
             Duration = TimeSpan.FromMilliseconds(42),
             RunLocation = "uksouth",
             Message = "OK",
-            Properties = new Dictionary<string, string>
-            {
-                ["component"] = fallbackComponent
-            }
+            Properties = ExternalHealthCheck.BuildContractDimensions(testConfig, "uksouth")
         };
 
         telemetry.Track(entry);
 
         Assert.Equal(1, spy.TrackCount);
         Assert.NotNull(spy.LastEntry?.Properties);
-        Assert.Equal("app-portal-repo-prd", spy.LastEntry.Properties["component"]);
+        Assert.Equal("app-portal-repo-prd", spy.LastEntry.Properties["componentId"]);
     }
 
     [Fact]
-    public void Track_ComponentDimension_PassedThroughToEmitter()
+    public void Track_ContractDimensions_PassedThroughToEmitter()
     {
         // Verifies the full path: entry with Properties flows through MultiTargetAvailabilityTelemetry
         // to the underlying emitter without modification.
@@ -111,25 +128,33 @@ public sealed class ComponentDimensionTests
                 ["portal"] = portalSpy,
             });
 
+        var testConfig = new TestConfig
+        {
+            App = "app-portal-web-prd",
+            AppInsights = "portal",
+            Uri = "https://example.invalid/health/live",
+            Site = "xi",
+            Component = "xi.sitewatch.portal-web"
+        };
+
         var entry = new AvailabilityTelemetryEntry
         {
-            Name = "app-portal-web-prd",
+            Name = testConfig.App,
             Success = false,
             Duration = TimeSpan.FromMilliseconds(5000),
             RunLocation = "eastus",
             Message = "Timeout",
             Target = "portal",
-            Properties = new Dictionary<string, string>
-            {
-                ["component"] = "xi.sitewatch.portal-web"
-            }
+            Properties = ExternalHealthCheck.BuildContractDimensions(testConfig, "eastus")
         };
 
         telemetry.Track(entry);
 
         Assert.Equal(1, portalSpy.TrackCount);
         Assert.NotNull(portalSpy.LastEntry?.Properties);
-        Assert.Equal("xi.sitewatch.portal-web", portalSpy.LastEntry.Properties["component"]);
+        Assert.Equal("xi.sitewatch.portal-web", portalSpy.LastEntry.Properties["componentId"]);
+        Assert.Equal("xi", portalSpy.LastEntry.Properties["siteId"]);
+        Assert.Equal("eastus", portalSpy.LastEntry.Properties["region"]);
     }
 
     private sealed class SpyAvailabilityTelemetry : IAvailabilityTelemetry

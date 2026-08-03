@@ -22,4 +22,8 @@
     <ProjectReference Include="..\MX.Platform.SiteWatch.App\MX.Platform.SiteWatch.App.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\contract\availability-telemetry-contract.json" Link="contract\availability-telemetry-contract.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
