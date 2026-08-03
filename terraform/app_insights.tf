@@ -9,7 +9,7 @@ resource "azurerm_application_insights" "ai" {
   workspace_id = local.platform_monitoring_workspace_id
 
   application_type   = "web"
-  disable_ip_masking = true
+  ip_masking_enabled = false # preserves prior disable_ip_masking = true behaviour (real client IP is not masked)
 
   daily_data_cap_in_gb = 1
   retention_in_days    = 30
