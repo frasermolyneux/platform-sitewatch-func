@@ -12,9 +12,9 @@ Target: Engineers working on platform-sitewatch-func (Azure Functions uptime che
 ### Pull Requests → main
 - **pr-verify.yml**: Validation pipeline (runs on PR open/updates/reopen/label changes)
   - Build and test
-  - Terraform plan for dev by default (skips drafts and dependabot)
-  - Terraform plan+apply + deploy to dev when PR has `deploy-dev` label
-  - Terraform plan for prd when PR has `run-prd-plan` label
+  - Terraform plan for dev by default on non-draft PRs (also runs for dependabot; skipped on drafts and when the `deploy-dev` label is present, since plan+apply runs instead)
+  - Terraform plan+apply + deploy to dev when PR has `deploy-dev` label (skips drafts and dependabot)
+  - Terraform plan for prd when PR has `run-prd-plan` label (skips drafts; also runs for dependabot)
   - Concurrency groups prevent parallel dev/prd plans and deployments
 
 ### Main Branch on merge
@@ -78,7 +78,7 @@ graph TD
 
 - `deploy-dev` label: runs Terraform plan+apply for Development and deploys the function app to dev during PR validation.
 - `run-prd-plan` label: runs Terraform plan for Production during PR validation.
-- Draft PRs and dependabot PRs skip Terraform actions.
+- Draft PRs skip all Terraform actions. Dependabot PRs skip only the dev Terraform apply/deploy steps (dev plan+apply and dev deploy); the dev and prd Terraform plan jobs still run for dependabot (the prd plan only when the `run-prd-plan` label is present).
 
 ## Composite Actions (frasermolyneux/actions)
 
