@@ -14,8 +14,16 @@ public partial class ExternalHealthCheck
 {
     // Sleep-duration provider for the terminal Polly retry policy. Kept as an internal seam so
     // tests can drive the retry pipeline in zero real time without altering production behaviour;
-    // production wiring keeps the exponential 2s/4s/8s progression.
-    internal Func<int, TimeSpan> RetryBackoff { get; set; } = retryAttempt => TimeSpan.FromSeconds(1 << retryAttempt);
+    // production wiring keeps the exponential 2s/4s/8s progression. The setter rejects null so an
+    // accidental assignment cannot cause an NRE inside the Polly WaitAndRetryAsync pipeline at the
+    // next timer tick — that would surface as a silent retry-policy build failure in production.
+    private Func<int, TimeSpan> retryBackoff = retryAttempt => TimeSpan.FromSeconds(1 << retryAttempt);
+
+    internal Func<int, TimeSpan> RetryBackoff
+    {
+        get => retryBackoff;
+        set => retryBackoff = value ?? throw new ArgumentNullException(nameof(value));
+    }
 
     // Cap the number of concurrent availability checks per timer tick. Tuned so that even with a
     // worst-case retry sequence (4 attempts x 5s timeout + 2/4/8s backoff ~= 34s per failing test),
@@ -145,13 +153,33 @@ public partial class ExternalHealthCheck
                 Properties = BuildContractDimensions(testConfig, location)
             });
 
-            logger.LogError(
-                ex,
-                "Availability check failed for '{App}' at '{Location}' after {Duration}ms: {FailureSummary}",
-                testConfig.App,
-                location,
-                stopwatch.ElapsedMilliseconds,
-                failureSummary);
+            // Only forward the raw exception object to the logger for exception shapes that cannot
+            // carry host/URL fragments in their Message. HttpClient exceptions
+            // (HttpRequestException, TaskCanceledException/timeouts, OperationCanceledException)
+            // routinely include the target host in ex.Message, and most logging sinks serialise the
+            // exception message/stack into telemetry — that would defeat the sanitisation goal even
+            // though the message template only references FailureSummary. For those network shapes
+            // we log the sanitised classification only; for anything else we still attach the
+            // exception object because unexpected failure modes need the stack for triage.
+            if (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
+            {
+                logger.LogError(
+                    "Availability check failed for '{App}' at '{Location}' after {Duration}ms: {FailureSummary}",
+                    testConfig.App,
+                    location,
+                    stopwatch.ElapsedMilliseconds,
+                    failureSummary);
+            }
+            else
+            {
+                logger.LogError(
+                    ex,
+                    "Availability check failed for '{App}' at '{Location}' after {Duration}ms: {FailureSummary}",
+                    testConfig.App,
+                    location,
+                    stopwatch.ElapsedMilliseconds,
+                    failureSummary);
+            }
         }
         finally
         {

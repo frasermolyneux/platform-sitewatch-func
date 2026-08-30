@@ -23,8 +23,9 @@ public sealed class ExternalHealthCheckTests
     private const string SensitiveResponseBody = "SENSITIVE_RESPONSE_BODY_PAYLOAD_DO_NOT_LEAK";
     private const string AppName = "app-sentinel-prd";
     private const string SiteId = "xi";
+    private const string HostName = "example.invalid";
     private const string PathSegment = "/probe";
-    private const string ExpandedUri = "https://example.invalid" + PathSegment + "?key=" + SecretQueryValue;
+    private const string ExpandedUri = "https://" + HostName + PathSegment + "?key=" + SecretQueryValue;
 
     [Fact]
     public async Task Success_TracksSuccessAvailability_WithoutRetryWarnings()
@@ -174,6 +175,21 @@ public sealed class ExternalHealthCheckTests
     }
 
     [Fact]
+    public void RetryBackoff_Setter_RejectsNull()
+    {
+        // Guard the internal seam: a null assignment (accidental or via a test refactor) would
+        // otherwise defer the failure into Polly's WaitAndRetryAsync at the next timer tick.
+        var target = new ExternalHealthCheck(
+            new ConfigurationBuilder().Build(),
+            new StaticOptionsMonitor(new SiteWatchOptions()),
+            new StubHttpClientFactory(new StubHandler((_, _) => new HttpResponseMessage(HttpStatusCode.OK))),
+            new SpyAvailabilityTelemetry(),
+            NullLogger<ExternalHealthCheck>.Instance);
+
+        Assert.Throws<ArgumentNullException>(() => target.RetryBackoff = null!);
+    }
+
+    [Fact]
     public void ClassifyFailure_MapsExceptionsToSanitisedSummaries()
     {
         Assert.Equal(
@@ -213,6 +229,10 @@ public sealed class ExternalHealthCheckTests
         Assert.DoesNotContain("?key=", text, StringComparison.Ordinal);
         Assert.DoesNotContain(ExpandedUri, text, StringComparison.Ordinal);
         Assert.DoesNotContain(PathSegment, text, StringComparison.Ordinal);
+        // Host-only leakage guard: HttpClient exceptions frequently surface just the hostname in
+        // ex.Message (with no path/query). Asserting the bare hostname is absent catches that
+        // real-world shape even when the full expanded URI is not present.
+        Assert.DoesNotContain(HostName, text, StringComparison.Ordinal);
     }
 
     private sealed class Harness : IDisposable
