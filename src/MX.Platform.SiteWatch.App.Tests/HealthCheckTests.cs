@@ -8,10 +8,12 @@ using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 
+using MX.Platform.SitewatchFunc;
+
 namespace MX.Platform.SiteWatch.App.Tests;
 
 /// <summary>
-/// Covers <see cref="SitewatchFunc.HealthCheck"/> after replacing the removed
+/// Covers <see cref="HealthCheck"/> after replacing the removed
 /// <c>Microsoft.AspNetCore.Mvc.Core</c>-based <c>IActionResult</c> responses with
 /// <see cref="HttpResponseData"/>, exercising the JSON serialisation path directly against the
 /// isolated worker HTTP types.
@@ -21,7 +23,7 @@ public sealed class HealthCheckTests
     [Fact]
     public async Task RunLive_ReturnsOk_WithHealthyStatus()
     {
-        var sut = new SitewatchFunc.HealthCheck(new StubHealthCheckService(HealthStatus.Healthy));
+        var sut = new HealthCheck(new StubHealthCheckService(HealthStatus.Healthy));
         var request = new FakeHttpRequestData();
 
         var response = await sut.RunLive(request);
@@ -34,7 +36,7 @@ public sealed class HealthCheckTests
     [Fact]
     public async Task RunReady_ReturnsOk_WhenHealthy()
     {
-        var sut = new SitewatchFunc.HealthCheck(new StubHealthCheckService(HealthStatus.Healthy));
+        var sut = new HealthCheck(new StubHealthCheckService(HealthStatus.Healthy));
         var request = new FakeHttpRequestData();
 
         var response = await sut.RunReady(request, request.FunctionContext);
@@ -47,7 +49,7 @@ public sealed class HealthCheckTests
     [Fact]
     public async Task RunReady_ReturnsServiceUnavailable_WhenUnhealthy()
     {
-        var sut = new SitewatchFunc.HealthCheck(new StubHealthCheckService(HealthStatus.Unhealthy));
+        var sut = new HealthCheck(new StubHealthCheckService(HealthStatus.Unhealthy));
         var request = new FakeHttpRequestData();
 
         var response = await sut.RunReady(request, request.FunctionContext);
