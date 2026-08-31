@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
+using System.Net;
+
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -9,15 +9,16 @@ namespace MX.Platform.SitewatchFunc;
 public class HealthCheck(HealthCheckService healthCheck)
 {
     [Function("HealthCheckReady")]
-    public async Task<IActionResult> RunReady([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "health/ready")] HttpRequestData req,
+    public async Task<HttpResponseData> RunReady([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "health/ready")] HttpRequestData req,
         FunctionContext context)
     {
         var result = await healthCheck.CheckHealthAsync(context.CancellationToken);
         var statusCode = result.Status == HealthStatus.Healthy
-            ? StatusCodes.Status200OK
-            : StatusCodes.Status503ServiceUnavailable;
+            ? HttpStatusCode.OK
+            : HttpStatusCode.ServiceUnavailable;
 
-        return new ObjectResult(new
+        var response = req.CreateResponse(statusCode);
+        await response.WriteAsJsonAsync(new
         {
             status = result.Status.ToString(),
             checks = result.Entries.Select(e => new
@@ -26,18 +27,20 @@ public class HealthCheck(HealthCheckService healthCheck)
                 status = e.Value.Status.ToString(),
                 description = e.Value.Description,
             }),
-        })
-        {
-            StatusCode = statusCode,
-        };
+        });
+
+        return response;
     }
 
     [Function("HealthCheckLive")]
-    public IActionResult RunLive([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "health/live")] HttpRequestData req)
+    public async Task<HttpResponseData> RunLive([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "health/live")] HttpRequestData req)
     {
-        return new OkObjectResult(new
+        var response = req.CreateResponse(HttpStatusCode.OK);
+        await response.WriteAsJsonAsync(new
         {
             status = HealthStatus.Healthy.ToString(),
         });
+
+        return response;
     }
 }

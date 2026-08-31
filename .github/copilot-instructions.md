@@ -1,9 +1,9 @@
 # Copilot instructions
 
-- This repository owns a .NET 9 isolated Azure Functions workload for scheduled external
+- This repository owns a .NET 10 isolated Azure Functions workload for scheduled external
   availability checks, Application Insights availability telemetry, health endpoints, and its
   Terraform.
-- Use the SDK pinned in `global.json`; build and test through `src/MX.Platform.SiteWatch.sln`.
+- Use the SDK pinned in `global.json`; build and test through `src/MX.Platform.SiteWatch.slnx`.
 - Preserve the 30-second timer, five-check concurrency cap, five-second HTTP timeout, three Polly
   retries with 2/4/8-second backoff, cancellation behavior, token substitution, and disable flag.
 - `contract/availability-telemetry-contract.json` defines required `componentId`, `siteId`, and

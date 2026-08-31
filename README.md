@@ -17,7 +17,7 @@
 
 ## Overview
 
-.NET 9 isolated Azure Functions app that runs external HTTP availability checks on a timer and publishes Availability telemetry to Application Insights. Targets are defined in configuration (or `test_config`) with optional per-target telemetry connection strings and token replacement for secrets. Polly-driven retries wrap each request, and a health endpoint exposes basic liveness for probes. Infrastructure is provisioned with Terraform and deployed via GitHub Actions workflows above.
+.NET 10 isolated Azure Functions app that runs external HTTP availability checks on a timer and publishes Availability telemetry to Application Insights. Targets are defined in configuration (or `test_config`) with optional per-target telemetry connection strings and token replacement for secrets. Polly-driven retries wrap each request, and a health endpoint exposes basic liveness for probes. Infrastructure is provisioned with Terraform and deployed via GitHub Actions workflows above.
 
 ## Contributing
 
