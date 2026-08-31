@@ -1,16 +1,17 @@
-# Copilot Instructions
+# Copilot instructions
 
-> Shared conventions: see [`.github-copilot/.github/instructions/terraform.instructions.md`](../../.github-copilot/.github/instructions/terraform.instructions.md) (sibling repo) for the standard Terraform layout, providers, remote-state pattern, validation commands, and CI/CD workflows. Terraform definitions for this stack live under `terraform/`.
-
-- **Purpose**: .NET 9 isolated Azure Functions app that runs external HTTP availability checks on a 30-second timer and reports availability telemetry to Application Insights; infrastructure is managed via Terraform and deployed by GitHub Actions.
-- **Entry point**: [src/MX.Platform.SiteWatch.App/Program.cs](../src/MX.Platform.SiteWatch.App/Program.cs) wires Functions defaults, registers MX OpenTelemetry observability and multi-target availability telemetry, health checks, and binds `SiteWatchOptions`.
-- **Timer flow**: [ExternalHealthCheck](../src/MX.Platform.SiteWatch.App/ExternalHealthCheck.cs) is a `TimerTrigger` (`0,30 * * * * *`, every 30 seconds) that iterates configured tests in parallel via `Parallel.ForEachAsync` (capped at `MaxConcurrentChecks = 5` concurrent probes) and issues HTTP GETs with a named `HttpClient` (`SiteWatch`, 5s timeout) wrapped in Polly `WaitAndRetryAsync` (3 attempts, 2/4/8s backoff) on non-success, `HttpRequestException`, or `TaskCanceledException`. The `FunctionContext.CancellationToken` is plumbed through `Parallel.ForEachAsync`, Polly, and `HttpClient.GetAsync` so a tick can be cancelled cleanly on host shutdown.
-- **Telemetry fan-out**: Multi-target availability via a SiteWatch-local `MultiTargetAvailabilityTelemetry` (in [src/MX.Platform.SiteWatch.App/Availability/](../src/MX.Platform.SiteWatch.App/Availability/)) registered in [Program.cs](../src/MX.Platform.SiteWatch.App/Program.cs) by replacing the default `IAvailabilityTelemetry` singleton from `AddObservability()`. Each test's `app_insights` value (e.g. `portal`, `geolocation`, `default`) is set as `AvailabilityTelemetryEntry.Target` and routed to the matching Application Insights connection string supplied through `SiteWatch__Telemetry__<name>` app settings (bound to `SiteWatchOptions.Telemetry`). Entries with an unknown or `default` target fall back to the host's own Application Insights, configured via the required `APPLICATIONINSIGHTS_CONNECTION_STRING` app setting.
-- **Config sources**: `SiteWatchOptions.Tests` comes from configuration `SiteWatch:Tests`; if empty, the app reads JSON from `test_config` env/app setting (case-insensitive) into `List<TestConfig>`. `SiteWatchOptions.Telemetry` is bound from `SiteWatch:Telemetry:*`. Setting `SiteWatch:DisableExternalChecks` skips the timer entirely. Tokens shaped like `%TOKEN%` inside URLs are replaced from configuration keys of the same name; missing tokens throw.
-- **Models**: [SiteWatchOptions](../src/MX.Platform.SiteWatch.App/SiteWatchOptions.cs) holds telemetry/test collections and the disable flag; [TestConfig](../src/MX.Platform.SiteWatch.App/TestConfig.cs) defines `app`, `app_insights`, and `uri` (required fields, JSON friendly).
-- **Health endpoint**: [HealthCheck](../src/MX.Platform.SiteWatch.App/HealthCheck.cs) exposes anonymous `GET /api/health/live` (process liveness) and `GET /api/health/ready` (aggregated `HealthCheckService` readiness status).
-- **Host settings**: [host.json](../src/MX.Platform.SiteWatch.App/host.json) sets `Function.HealthCheck` log level to Warning and enables sampling (exceptions excluded from sampling alongside availability).
-- **Local loop**: From `src/MX.Platform.SiteWatch.App`, run `dotnet clean`, `dotnet build`, and `dotnet test --filter "FullyQualifiedName!~IntegrationTests"`. Local settings come from app settings or user secrets (UserSecretsId is set in the csproj).
-- **Workflows**: `.github/workflows` adds `dotnet-func-ci` and `deploy-function-app` reusable actions on top of the standard platform Terraform workflow set. `pr-verify` supports an optional `deploy-dev` label for dev apply/deploy in addition to the standard `run-prd-plan` label.
-- **Environment & secrets**: Keep `test_config` secrets in app settings/Key Vault rather than committing them. The canonical app setting `APPLICATIONINSIGHTS_CONNECTION_STRING` is **required** for the function's own telemetry. Per-target connection strings (`SiteWatch__Telemetry__portal`, `SiteWatch__Telemetry__geolocation`, ...) are populated from `data.azurerm_application_insights` lookups when `portal_app_insights` / `geolocation_app_insights` are configured.
-- **Common pitfalls**: Each test's `app_insights` value must match a target name in `SiteWatch:Telemetry` (otherwise telemetry falls back to the function's own Application Insights). Missing URL tokens throw. The Azure Monitor exporter takes its connection string at construction time, so any new target requires both a new app setting and an app restart. Keep timer schedule aligned with expected frequency before changing the cron string.
+- This repository owns a .NET 9 isolated Azure Functions workload for scheduled external
+  availability checks, Application Insights availability telemetry, health endpoints, and its
+  Terraform.
+- Use the SDK pinned in `global.json`; build and test through `src/MX.Platform.SiteWatch.sln`.
+- Preserve the 30-second timer, five-check concurrency cap, five-second HTTP timeout, three Polly
+  retries with 2/4/8-second backoff, cancellation behavior, token substitution, and disable flag.
+- `contract/availability-telemetry-contract.json` defines required `componentId`, `siteId`, and
+  `region` dimensions. Follow `docs/telemetry-contract.md` for coordinated contract changes and
+  producer-before-consumer deployment ordering.
+- Preserve named Application Insights target routing and fallback to the required host
+  `APPLICATIONINSIGHTS_CONNECTION_STRING`.
+- Terraform owns regional Function Apps, Application Insights resources, availability alerts, and
+  Key Vault integration; it uses separate dev/prd backends and workload/monitoring remote state.
+- Keep target secrets and URL tokens in app settings or Key Vault.
+- Never commit credentials or generated `bin/`, `obj/`, `.terraform/`, or state files.
