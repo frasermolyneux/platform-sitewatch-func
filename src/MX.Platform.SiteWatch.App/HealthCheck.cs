@@ -27,7 +27,7 @@ public class HealthCheck(HealthCheckService healthCheck)
                 status = e.Value.Status.ToString(),
                 description = e.Value.Description,
             }),
-        });
+        }, context.CancellationToken);
 
         return response;
     }
