@@ -17,13 +17,11 @@ public partial class ExternalHealthCheck
     // production wiring keeps the exponential 2s/4s/8s progression. The setter rejects null so an
     // accidental assignment cannot cause an NRE inside the Polly WaitAndRetryAsync pipeline at the
     // next timer tick — that would surface as a silent retry-policy build failure in production.
-    private Func<int, TimeSpan> retryBackoff = retryAttempt => TimeSpan.FromSeconds(1 << retryAttempt);
-
     internal Func<int, TimeSpan> RetryBackoff
     {
-        get => retryBackoff;
-        set => retryBackoff = value ?? throw new ArgumentNullException(nameof(value));
-    }
+        get;
+        set => field = value ?? throw new ArgumentNullException(nameof(value));
+    } = retryAttempt => TimeSpan.FromSeconds(1 << retryAttempt);
 
     // Cap the number of concurrent availability checks per timer tick. Tuned so that even with a
     // worst-case retry sequence (4 attempts x 5s timeout + 2/4/8s backoff ~= 34s per failing test),

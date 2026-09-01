@@ -22,10 +22,10 @@ provisions its Function Apps, telemetry, configuration, and availability alerts 
 ## Useful commands
 
 ```pwsh
-dotnet build src/MX.Platform.SiteWatch.sln
-dotnet test src/MX.Platform.SiteWatch.sln --filter "FullyQualifiedName!~IntegrationTests"
+dotnet build src/MX.Platform.SiteWatch.slnx
+dotnet test src/MX.Platform.SiteWatch.slnx --filter "FullyQualifiedName!~IntegrationTests"
 dotnet test src/MX.Platform.SiteWatch.App.Tests/MX.Platform.SiteWatch.App.Tests.csproj --filter "FullyQualifiedName~ExternalHealthCheckTests"
-dotnet format src/MX.Platform.SiteWatch.sln --verify-no-changes
+dotnet format src/MX.Platform.SiteWatch.slnx --verify-no-changes
 
 terraform -chdir=terraform fmt -check -recursive
 terraform -chdir=terraform init -backend-config=backends/dev.backend.hcl

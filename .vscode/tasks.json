@@ -6,7 +6,7 @@
 			"command": "dotnet",
 			"args": [
 				"clean",
-				"${workspaceFolder}/src/MX.Platform.SiteWatch.sln",
+				"${workspaceFolder}/src/MX.Platform.SiteWatch.slnx",
 				"/property:GenerateFullPaths=true",
 				"/consoleloggerparameters:NoSummary"
 			],
@@ -18,7 +18,7 @@
 			"command": "dotnet",
 			"args": [
 				"build",
-				"${workspaceFolder}/src/MX.Platform.SiteWatch.sln",
+				"${workspaceFolder}/src/MX.Platform.SiteWatch.slnx",
 				"/property:GenerateFullPaths=true",
 				"/consoleloggerparameters:NoSummary"
 			],
@@ -35,7 +35,7 @@
 			"command": "dotnet",
 			"args": [
 				"test",
-				"${workspaceFolder}/src/MX.Platform.SiteWatch.sln",
+				"${workspaceFolder}/src/MX.Platform.SiteWatch.slnx",
 				"--filter",
 				"FullyQualifiedName!~IntegrationTests",
 				"/property:GenerateFullPaths=true",
@@ -53,7 +53,7 @@
 			"command": "dotnet",
 			"args": [
 				"format",
-				"${workspaceFolder}/src/MX.Platform.SiteWatch.sln",
+				"${workspaceFolder}/src/MX.Platform.SiteWatch.slnx",
 				"--verify-no-changes"
 			],
 			"type": "process",
@@ -78,7 +78,7 @@
 			"type": "func",
 			"dependsOn": "dotnet: build",
 			"options": {
-				"cwd": "${workspaceFolder}/src/MX.Platform.SiteWatch.App/bin/Debug/net9.0"
+				"cwd": "${workspaceFolder}/src/MX.Platform.SiteWatch.App/bin/Debug/net10.0"
 			},
 			"command": "host start",
 			"isBackground": true,

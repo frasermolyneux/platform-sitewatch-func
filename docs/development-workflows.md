@@ -6,7 +6,7 @@ Target: Engineers working on platform-sitewatch-func (Azure Functions uptime che
 
 ### Feature Development feature/*, bugfix/*, hotfix/*
 - **build-and-test.yml**: Runs on push to feature/bugfix/hotfix branches
-  - Build and test via `dotnet-func-ci` targeting .NET 9
+  - Build and test via `dotnet-func-ci` targeting .NET 10
   - No Terraform or deployments; fast feedback while iterating
 
 ### Pull Requests → main
