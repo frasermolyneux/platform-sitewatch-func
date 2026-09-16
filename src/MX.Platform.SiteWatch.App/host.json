@@ -2,12 +2,13 @@
     "version": "2.0",
     "logging": {
         "logLevel": {
-            "Function.HealthCheck": "Warning"
+            "Function": "Warning",
+            "Function.HealthCheck": "Warning",
+            "Host.Results": "Error"
         },
         "applicationInsights": {
             "samplingSettings": {
-                "isEnabled": true,
-                "excludedTypes": "Exception;Availability"
+                "isEnabled": false
             }
         }
     }

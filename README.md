@@ -14,6 +14,7 @@
 
 * [Development Workflows](/docs/development-workflows.md) - Branch strategy, CI/CD triggers, and deployment flows.
 * [Telemetry Contract](/docs/telemetry-contract.md) - The explicit customDimensions contract shared with `platform-status-web`.
+* [Telemetry Pipelines](/docs/telemetry.md) - Azure Functions host filtering and isolated worker telemetry behavior.
 
 ## Overview
 
