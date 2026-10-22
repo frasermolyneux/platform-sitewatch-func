@@ -29,7 +29,7 @@ Existing regional Application Insights resources, named telemetry targets and av
 dimensions are preserved.
 
 AzureRM 5.9 injects a reserved, empty-key `AzureWebJobsStorage` connection string even for
-identity-based deployments. The managed deployment health step first verifies the identity
+identity-based deployments. Before package upload, the managed deployment verifies the identity
 host-storage settings and removes only that conflicting setting, without logging connection
 strings. This prevents the legacy string from overriding managed identity while shared-key
 access remains disabled.

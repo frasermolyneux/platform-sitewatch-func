@@ -2,6 +2,7 @@
 set -euo pipefail
 
 script="${1:?A Function host verification script is required}"
+prepare_script="${2:?A Function host preparation script is required}"
 test_dir=$(mktemp -d)
 export TEST_LOG="${test_dir}/calls"
 output="${test_dir}/output"
@@ -36,7 +37,7 @@ run_case() {
   local name="$1" expected="$2" actual=0
   shift 2
   : > "$TEST_LOG"
-  env "$@" bash "$script" > "$output" 2>&1 || actual=$?
+  env "$@" bash -c 'bash "$1" && bash "$2"' -- "$prepare_script" "$script" > "$output" 2>&1 || actual=$?
   if [[ "$actual" != "$expected" ]]; then
     cat "$output"
     echo "Failed ${name}: expected exit ${expected}, received ${actual}." >&2
