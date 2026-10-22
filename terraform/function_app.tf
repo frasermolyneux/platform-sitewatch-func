@@ -42,7 +42,6 @@ resource "azurerm_linux_function_app" "app" {
       "REGION_NAME" = each.value.location
 
       "ApplicationInsightsAgent_EXTENSION_VERSION" = "~3"
-      "APPLICATIONINSIGHTS_CONNECTION_STRING"      = azurerm_application_insights.ai[each.key].connection_string
 
       "test_config"                      = jsonencode(var.availability_tests)
       "SiteWatch__DisableExternalChecks" = tostring(var.disable_external_checks)

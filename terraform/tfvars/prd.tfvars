@@ -193,6 +193,16 @@ availability_tests = [
     severity     = "low"
     site         = "mx"
     component    = "mx.sitewatch.molyneux-me"
+  },
+  {
+    workload     = "platform-radar"
+    environment  = "prd"
+    app          = "radar.molyneux.io"
+    app_insights = "default"
+    uri          = "https://radar.molyneux.io/health/live"
+    severity     = "high"
+    site         = "mx"
+    component    = "mx.sitewatch.radar"
   }
 ]
 
