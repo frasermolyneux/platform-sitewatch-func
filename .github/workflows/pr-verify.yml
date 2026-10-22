@@ -32,6 +32,9 @@ jobs:
           dotnet-version: 10.0.x
           src-folder: "src"
           skip-nuget-artifact-upload: "true"
+      - name: Test Function host reconciliation
+        shell: bash
+        run: bash .github/scripts/test-function-host.sh .github/scripts/wait-for-function-health.sh
 
   terraform-plan-dev:
     permissions:
@@ -123,6 +126,8 @@ jobs:
         run: bash .github/scripts/wait-for-function-health.sh
         env:
           FUNCTION_APP_HOSTNAME: ${{ matrix.func_app.hostname }}
+          FUNCTION_APP_NAME: ${{ matrix.func_app.name }}
+          FUNCTION_APP_RESOURCE_GROUP: ${{ matrix.func_app.resource_group_name }}
 
   terraform-plan-prd:
     permissions:

@@ -28,6 +28,12 @@ packages and host storage use its system-assigned identity against workload-owne
 Existing regional Application Insights resources, named telemetry targets and availability
 dimensions are preserved.
 
+AzureRM 5.9 injects a reserved, empty-key `AzureWebJobsStorage` connection string even for
+identity-based deployments. The managed deployment health step first verifies the identity
+host-storage settings and removes only that conflicting setting, without logging connection
+strings. This prevents the legacy string from overriding managed identity while shared-key
+access remains disabled.
+
 Zone redundancy is deliberately disabled: Flex would bill at least two always-ready instances
 per scaling group even when the configured count is zero
 ([Microsoft guidance](https://learn.microsoft.com/en-us/azure/reliability/reliability-functions#instance-distribution-across-zones)).
