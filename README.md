@@ -28,6 +28,13 @@ packages and host storage use its system-assigned identity against workload-owne
 Existing regional Application Insights resources, named telemetry targets and availability
 dimensions are preserved.
 
+Zone redundancy is deliberately disabled: Flex would bill at least two always-ready instances
+per scaling group even when the configured count is zero
+([Microsoft guidance](https://learn.microsoft.com/en-us/azure/reliability/reliability-functions#instance-distribution-across-zones)).
+Production uses three independent regional probes instead. An individual regional probe can
+pause during a zonal outage. The `CKV_AZURE_225` exception is limited to the new FC1 plan and
+records this cost/reliability tradeoff; it does not disable scanning for other resources.
+
 A subscription administrator must register the `Microsoft.App` resource provider before the
 first Flex deployment in that subscription. This bootstrap prerequisite does not require
 granting the workload CI identity subscription-wide permissions.

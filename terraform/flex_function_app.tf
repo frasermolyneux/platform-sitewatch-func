@@ -1,4 +1,5 @@
 resource "azurerm_service_plan" "flex" {
+  # checkov:skip=CKV_AZURE_225:Scale-to-zero probes use independent production regions instead of billed zone-redundant always-ready instances; see README Hosting.
   for_each = data.azurerm_resource_group.rg
 
   name                = "asp-platform-sitewatch-${var.environment}-${each.key}-flex"
