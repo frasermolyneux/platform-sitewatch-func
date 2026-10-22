@@ -26,5 +26,6 @@ output "func_apps" {
     name                = app.name
     resource_group_name = app.resource_group_name
     location            = app.location
+    hostname            = app.default_hostname
   }]
 }

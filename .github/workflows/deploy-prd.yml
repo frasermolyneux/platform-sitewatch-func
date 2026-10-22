@@ -152,7 +152,7 @@ jobs:
         shell: bash
         run: bash .github/scripts/wait-for-function-health.sh
         env:
-          FUNCTION_APP_NAME: ${{ matrix.func_app.name }}
+          FUNCTION_APP_HOSTNAME: ${{ matrix.func_app.hostname }}
 
   terraform-plan-and-apply-prd:
     permissions:
@@ -239,4 +239,4 @@ jobs:
         shell: bash
         run: bash .github/scripts/wait-for-function-health.sh
         env:
-          FUNCTION_APP_NAME: ${{ matrix.func_app.name }}
+          FUNCTION_APP_HOSTNAME: ${{ matrix.func_app.hostname }}

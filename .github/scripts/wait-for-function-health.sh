@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-: "${FUNCTION_APP_NAME:?FUNCTION_APP_NAME is required}"
-if [[ ! "$FUNCTION_APP_NAME" =~ ^[a-zA-Z0-9-]{2,60}$ ]]; then
-  echo "::error::Invalid Function App name."
+: "${FUNCTION_APP_HOSTNAME:?FUNCTION_APP_HOSTNAME is required}"
+if [[ ! "$FUNCTION_APP_HOSTNAME" =~ ^([a-zA-Z0-9-]+\.)+azurewebsites\.net$ ]]; then
+  echo "::error::Invalid Function App hostname."
   exit 1
 fi
 
@@ -18,7 +18,7 @@ for endpoint in live ready; do
 
     status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
       --max-time "$((remaining < 20 ? remaining : 20))" \
-      "https://${FUNCTION_APP_NAME}.azurewebsites.net/api/health/${endpoint}") || status=000
+      "https://${FUNCTION_APP_HOSTNAME}/api/health/${endpoint}") || status=000
     echo "Function ${endpoint} endpoint returned HTTP ${status}."
     if [[ "$status" == 200 ]]; then
       break
