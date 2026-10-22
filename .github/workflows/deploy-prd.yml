@@ -71,7 +71,9 @@ jobs:
           skip-nuget-artifact-upload: "true"
 
   terraform-plan-and-apply-dev:
-    if: github.event_name != 'schedule'
+    if: |
+      github.event_name != 'schedule' && !failure() && !cancelled() &&
+      (needs.build-and-test.result == 'success' || needs.build-and-test.result == 'skipped')
     permissions:
       contents: read
       id-token: write
@@ -79,6 +81,7 @@ jobs:
     needs:
       - detect-changes
       - terraform-state-check-dev
+      - build-and-test
     runs-on: ubuntu-latest
     concurrency:
       group: ${{ github.repository }}-dev
