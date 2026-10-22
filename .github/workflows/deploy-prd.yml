@@ -59,7 +59,7 @@ jobs:
       - terraform-state-check-dev
     if: |
       !failure() && !cancelled() &&
-      (needs.detect-changes.outputs.src == 'true' || needs.terraform-state-check-dev.outputs.state_tainted == 'true')
+      (needs.detect-changes.outputs.src == 'true' || needs.detect-changes.outputs.terraform == 'true' || needs.terraform-state-check-dev.outputs.state_tainted == 'true')
     runs-on: ubuntu-latest
     steps:
       - uses: frasermolyneux/actions/dotnet-func-ci@dotnet-func-ci/v2.1
@@ -134,11 +134,12 @@ jobs:
     if: |
       github.event_name != 'schedule' &&
       !failure() && !cancelled() &&
-      (needs.detect-changes.outputs.src == 'true' || needs.terraform-state-check-dev.outputs.state_tainted == 'true')
+      (needs.detect-changes.outputs.src == 'true' || needs.detect-changes.outputs.terraform == 'true' || needs.terraform-state-check-dev.outputs.state_tainted == 'true')
     strategy:
       matrix:
         func_app: ${{ fromJSON(needs.terraform-plan-and-apply-dev.outputs.func_apps) }}
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: frasermolyneux/actions/deploy-function-app@deploy-function-app/v1.2
         with:
           function-app-artifact-name: "MX.Platform.SiteWatch.App"
@@ -147,6 +148,11 @@ jobs:
           AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
           AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Verify Function App health
+        shell: bash
+        run: bash .github/scripts/wait-for-function-health.sh
+        env:
+          FUNCTION_APP_NAME: ${{ matrix.func_app.name }}
 
   terraform-plan-and-apply-prd:
     permissions:
@@ -214,12 +220,13 @@ jobs:
     if: |
       !failure() && !cancelled() &&
       needs.terraform-plan-and-apply-prd.result == 'success' &&
-      needs.detect-changes.outputs.src == 'true'
+      (needs.detect-changes.outputs.src == 'true' || needs.detect-changes.outputs.terraform == 'true')
     strategy:
       max-parallel: 1
       matrix:
         func_app: ${{ fromJSON(needs.terraform-plan-and-apply-prd.outputs.func_apps) }}
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: frasermolyneux/actions/deploy-function-app@deploy-function-app/v1.2
         with:
           function-app-artifact-name: "MX.Platform.SiteWatch.App"
@@ -228,3 +235,8 @@ jobs:
           AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
           AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Verify Function App health
+        shell: bash
+        run: bash .github/scripts/wait-for-function-health.sh
+        env:
+          FUNCTION_APP_NAME: ${{ matrix.func_app.name }}

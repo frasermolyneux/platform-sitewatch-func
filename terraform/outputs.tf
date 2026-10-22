@@ -22,7 +22,7 @@ output "key_vault" {
 }
 
 output "func_apps" {
-  value = [for app in azurerm_linux_function_app.app : {
+  value = [for app in azurerm_function_app_flex_consumption.app : {
     name                = app.name
     resource_group_name = app.resource_group_name
     location            = app.location

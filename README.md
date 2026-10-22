@@ -20,6 +20,23 @@
 
 .NET 10 isolated Azure Functions app that runs external HTTP availability checks on a timer and publishes Availability telemetry to Application Insights. Targets are defined in configuration (or `test_config`) with optional per-target telemetry connection strings and token replacement for secrets. Polly-driven retries wrap each request, and a health endpoint exposes basic liveness for probes. Infrastructure is provisioned with Terraform and deployed via GitHub Actions workflows above.
 
+## Hosting
+
+Deployments target Linux Flex Consumption, which supports .NET 10. Each regional Function uses
+512 MB, scales to zero with no always-ready instances, and is limited to one instance. Deployment
+packages and host storage use its system-assigned identity against workload-owned storage.
+Existing regional Application Insights resources, named telemetry targets and availability
+dimensions are preserved.
+
+A subscription administrator must register the `Microsoft.App` resource provider before the
+first Flex deployment in that subscription. This bootstrap prerequisite does not require
+granting the workload CI identity subscription-wide permissions.
+
+The migration first adds Flex Functions alongside the legacy Linux Consumption resources.
+Legacy probe configuration is held unchanged for rollback. Remove the legacy Functions, plans
+and their role assignments only after development and all three production regions have passed
+health checks and emitted genuine availability telemetry.
+
 ## Contributing
 
 Please read the [contributing](CONTRIBUTING.md) guidance; this is a learning and development project.

@@ -22,6 +22,8 @@ Target: Engineers working on platform-sitewatch-func (Azure Functions uptime che
   - Build → Dev plan/apply → Deploy Dev (only on pushes to `main`)
   - Prd plan/apply → Deploy Prd (on push to `main`, weekly schedule Thu 3am UTC, or manual dispatch)
   - Prd steps tolerate skipped Dev deploys for scheduled/manual runs
+  - Source or Terraform changes build and deploy the application, including newly created Flex Functions.
+  - Development must pass liveness and readiness before production promotion; production regions deploy sequentially with the same bounded health gate.
 
 ### Scheduled & On-Demand
 - **codequality.yml**: Weekly Monday 3am UTC + PR/push to main
@@ -85,6 +87,7 @@ graph TD
 - **dotnet-func-ci**: Build and test the function app.
 - **terraform-plan** / **terraform-plan-and-apply**: Init, plan, and optionally apply Terraform.
 - **deploy-function-app**: Deploy Azure Function Apps from build artifacts.
+- `.github/scripts/wait-for-function-health.sh`: Fail deployment if the application does not expose healthy liveness and readiness endpoints within five minutes. Used by promotion, manual development and PR development deployments.
 
 ## Quick Reference
 
