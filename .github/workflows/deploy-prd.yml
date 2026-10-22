@@ -30,7 +30,6 @@ jobs:
             terraform:terraform/**
 
   terraform-state-check-dev:
-    if: github.event_name != 'schedule'
     permissions:
       contents: read
       id-token: write
@@ -72,7 +71,7 @@ jobs:
 
   terraform-plan-and-apply-dev:
     if: |
-      github.event_name != 'schedule' && !failure() && !cancelled() &&
+      !failure() && !cancelled() &&
       (needs.build-and-test.result == 'success' || needs.build-and-test.result == 'skipped')
     permissions:
       contents: read
@@ -135,7 +134,6 @@ jobs:
     concurrency:
       group: ${{ github.repository }}-dev
     if: |
-      github.event_name != 'schedule' &&
       !failure() && !cancelled() &&
       (needs.detect-changes.outputs.src == 'true' || needs.detect-changes.outputs.terraform == 'true' || needs.terraform-state-check-dev.outputs.state_tainted == 'true')
     strategy:
@@ -173,7 +171,9 @@ jobs:
       group: ${{ github.repository }}-prd
     if: |
       !failure() && !cancelled() &&
-      (needs.terraform-plan-and-apply-dev.result == 'success' || github.event_name == 'schedule')
+      needs.terraform-plan-and-apply-dev.result == 'success' &&
+      (needs.function-app-deploy-dev.result == 'success' ||
+      (needs.detect-changes.outputs.src != 'true' && needs.detect-changes.outputs.terraform != 'true'))
     steps:
       - if: needs.detect-changes.outputs.terraform == 'true'
         uses: frasermolyneux/actions/terraform-plan-and-apply@terraform-plan-and-apply/v1.4

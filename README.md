@@ -49,6 +49,8 @@ The migration first adds Flex Functions alongside the legacy Linux Consumption r
 Legacy probe configuration is held unchanged for rollback. Remove the legacy Functions, plans
 and their role assignments only after development and all three production regions have passed
 health checks and emitted genuine availability telemetry.
+Scheduled promotions use the same verified development stage; they cannot mutate production
+while skipping development deployment and health checks.
 
 ## Contributing
 
