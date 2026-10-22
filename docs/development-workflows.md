@@ -17,12 +17,13 @@ Target: Engineers working on platform-sitewatch-func (Azure Functions uptime che
   - Terraform plan for prd when PR has `run-prd-plan` label
   - Concurrency groups prevent parallel dev/prd plans and deployments
 
-### Main Branch on merge
+### Production Promotion
 - **deploy-prd.yml**: Promotion pipeline
-  - Build → Dev plan/apply → Deploy Dev (only on pushes to `main`)
-  - Prd plan/apply → Deploy Prd (on push to `main`, weekly schedule Thu 3am UTC, or manual dispatch)
-  - Prd steps tolerate skipped Dev deploys for scheduled/manual runs
-  - Source or Terraform changes build and deploy the application, including newly created Flex Functions.
+  - Runs on pushes to `main`, the weekly Thursday 3am UTC schedule, and manual dispatch.
+  - Source or Terraform changes, or tainted development state, trigger Build → Dev plan/apply → Deploy Dev for every event type.
+  - A failed or cancelled build blocks development apply; failed development deployment or health checks block production promotion.
+  - With no relevant changes or tainted development state, the development stage reads existing outputs without rebuilding or deploying.
+  - Production applies Terraform when it changed and otherwise reads existing outputs; source or Terraform changes deploy the production application, including newly created Flex Functions.
   - Development must pass liveness and readiness before production promotion; production regions deploy sequentially with the same bounded health gate.
 
 ### Scheduled & On-Demand
@@ -60,13 +61,13 @@ graph TD
     J --> K
     K --> L[Merge PR]
     L --> M[deploy-prd triggers]
-    M --> N[Build & Test]
-    N --> O{Event == push?}
-    O -->|Yes| P[Dev TF Apply + Deploy Dev]
-    O -->|No| Q[Skip Dev apply/deploy]
-    P --> R[Prd TF Apply]
+    M --> O{Source / Terraform changes or tainted dev state?}
+    O -->|Yes| N[Build & Test]
+    N --> P[Dev TF Apply + Deploy Dev + Health]
+    O -->|No| Q[Read existing Dev outputs]
+    P --> R[Prd TF Apply or existing outputs]
     Q --> R
-    R --> S[Deploy Prd]
+    R --> S[Deploy Prd + Health when source / Terraform changed]
 
     style D fill:#e1f5ff
     style F fill:#e1f5ff
@@ -96,7 +97,8 @@ graph TD
 | Feature commit     | build-and-test | Push to feature/bugfix   | ❌             | ❌                    |
 | PR validation      | pr-verify      | PR to main               | Dev plan      | Optional dev (label) |
 | Merge to main      | deploy-prd     | Push to main             | Dev+Prd apply | Dev+Prd              |
-| Weekly maintenance | deploy-prd     | Thursday 3am UTC         | Prd apply     | Prd                  |
+| Weekly maintenance | deploy-prd     | Thursday 3am UTC         | Change/state-based Dev+Prd | Change/state-based Dev+Prd |
+| Manual promotion   | deploy-prd     | Manual dispatch          | Change/state-based Dev+Prd | Change/state-based Dev+Prd |
 | Manual dev refresh | deploy-dev     | Manual dispatch          | Dev apply     | Dev                  |
 | Code quality       | codequality    | Monday 3am UTC + PR/push | ❌             | ❌                    |
 
