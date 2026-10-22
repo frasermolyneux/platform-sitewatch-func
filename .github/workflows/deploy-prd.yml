@@ -30,7 +30,6 @@ jobs:
             terraform:terraform/**
 
   terraform-state-check-dev:
-    if: github.event_name != 'schedule'
     permissions:
       contents: read
       id-token: write
@@ -59,7 +58,7 @@ jobs:
       - terraform-state-check-dev
     if: |
       !failure() && !cancelled() &&
-      (needs.detect-changes.outputs.src == 'true' || needs.terraform-state-check-dev.outputs.state_tainted == 'true')
+      (needs.detect-changes.outputs.src == 'true' || needs.detect-changes.outputs.terraform == 'true' || needs.terraform-state-check-dev.outputs.state_tainted == 'true')
     runs-on: ubuntu-latest
     steps:
       - uses: frasermolyneux/actions/dotnet-func-ci@dotnet-func-ci/v2.1
@@ -71,7 +70,9 @@ jobs:
           skip-nuget-artifact-upload: "true"
 
   terraform-plan-and-apply-dev:
-    if: github.event_name != 'schedule'
+    if: |
+      !failure() && !cancelled() &&
+      (needs.build-and-test.result == 'success' || needs.build-and-test.result == 'skipped')
     permissions:
       contents: read
       id-token: write
@@ -79,6 +80,7 @@ jobs:
     needs:
       - detect-changes
       - terraform-state-check-dev
+      - build-and-test
     runs-on: ubuntu-latest
     concurrency:
       group: ${{ github.repository }}-dev
@@ -132,13 +134,24 @@ jobs:
     concurrency:
       group: ${{ github.repository }}-dev
     if: |
-      github.event_name != 'schedule' &&
       !failure() && !cancelled() &&
-      (needs.detect-changes.outputs.src == 'true' || needs.terraform-state-check-dev.outputs.state_tainted == 'true')
+      (needs.detect-changes.outputs.src == 'true' || needs.detect-changes.outputs.terraform == 'true' || needs.terraform-state-check-dev.outputs.state_tainted == 'true')
     strategy:
       matrix:
         func_app: ${{ fromJSON(needs.terraform-plan-and-apply-dev.outputs.func_apps) }}
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Prepare identity-based Function host
+        shell: bash
+        run: bash .github/scripts/prepare-function-host.sh
+        env:
+          FUNCTION_APP_NAME: ${{ matrix.func_app.name }}
+          FUNCTION_APP_RESOURCE_GROUP: ${{ matrix.func_app.resource_group_name }}
       - uses: frasermolyneux/actions/deploy-function-app@deploy-function-app/v1.2
         with:
           function-app-artifact-name: "MX.Platform.SiteWatch.App"
@@ -147,6 +160,13 @@ jobs:
           AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
           AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Verify Function App health
+        shell: bash
+        run: bash .github/scripts/wait-for-function-health.sh
+        env:
+          FUNCTION_APP_HOSTNAME: ${{ matrix.func_app.hostname }}
+          FUNCTION_APP_NAME: ${{ matrix.func_app.name }}
+          FUNCTION_APP_RESOURCE_GROUP: ${{ matrix.func_app.resource_group_name }}
 
   terraform-plan-and-apply-prd:
     permissions:
@@ -162,7 +182,9 @@ jobs:
       group: ${{ github.repository }}-prd
     if: |
       !failure() && !cancelled() &&
-      (needs.terraform-plan-and-apply-dev.result == 'success' || github.event_name == 'schedule')
+      needs.terraform-plan-and-apply-dev.result == 'success' &&
+      (needs.function-app-deploy-dev.result == 'success' ||
+      (needs.detect-changes.outputs.src != 'true' && needs.detect-changes.outputs.terraform != 'true'))
     steps:
       - if: needs.detect-changes.outputs.terraform == 'true'
         uses: frasermolyneux/actions/terraform-plan-and-apply@terraform-plan-and-apply/v1.4
@@ -214,12 +236,24 @@ jobs:
     if: |
       !failure() && !cancelled() &&
       needs.terraform-plan-and-apply-prd.result == 'success' &&
-      needs.detect-changes.outputs.src == 'true'
+      (needs.detect-changes.outputs.src == 'true' || needs.detect-changes.outputs.terraform == 'true')
     strategy:
       max-parallel: 1
       matrix:
         func_app: ${{ fromJSON(needs.terraform-plan-and-apply-prd.outputs.func_apps) }}
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Prepare identity-based Function host
+        shell: bash
+        run: bash .github/scripts/prepare-function-host.sh
+        env:
+          FUNCTION_APP_NAME: ${{ matrix.func_app.name }}
+          FUNCTION_APP_RESOURCE_GROUP: ${{ matrix.func_app.resource_group_name }}
       - uses: frasermolyneux/actions/deploy-function-app@deploy-function-app/v1.2
         with:
           function-app-artifact-name: "MX.Platform.SiteWatch.App"
@@ -228,3 +262,10 @@ jobs:
           AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
           AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Verify Function App health
+        shell: bash
+        run: bash .github/scripts/wait-for-function-health.sh
+        env:
+          FUNCTION_APP_HOSTNAME: ${{ matrix.func_app.hostname }}
+          FUNCTION_APP_NAME: ${{ matrix.func_app.name }}
+          FUNCTION_APP_RESOURCE_GROUP: ${{ matrix.func_app.resource_group_name }}

@@ -17,11 +17,15 @@ Target: Engineers working on platform-sitewatch-func (Azure Functions uptime che
   - Terraform plan for prd when PR has `run-prd-plan` label
   - Concurrency groups prevent parallel dev/prd plans and deployments
 
-### Main Branch on merge
+### Production Promotion
 - **deploy-prd.yml**: Promotion pipeline
-  - Build → Dev plan/apply → Deploy Dev (only on pushes to `main`)
-  - Prd plan/apply → Deploy Prd (on push to `main`, weekly schedule Thu 3am UTC, or manual dispatch)
-  - Prd steps tolerate skipped Dev deploys for scheduled/manual runs
+  - Runs on pushes to `main`, the weekly Thursday 3am UTC schedule, and manual dispatch.
+  - Scheduled and manual events force both change flags to true in `detect-changes/v1.0`: they are full Build → Dev apply/deploy/health → Prd apply/deploy/health promotions, even without a source diff.
+  - Source or Terraform changes, or tainted development state, trigger Build → Dev plan/apply → Deploy Dev for every event type.
+  - A failed or cancelled build blocks development apply; failed development deployment or health checks block production promotion.
+  - Only push events with no relevant changes or tainted development state read existing development outputs without rebuilding or deploying.
+  - Production applies Terraform when it changed and otherwise reads existing outputs; source or Terraform changes deploy the production application, including newly created Flex Functions.
+  - Development must pass liveness and readiness before production promotion; production regions deploy sequentially with the same bounded health gate.
 
 ### Scheduled & On-Demand
 - **codequality.yml**: Weekly Monday 3am UTC + PR/push to main
@@ -58,13 +62,13 @@ graph TD
     J --> K
     K --> L[Merge PR]
     L --> M[deploy-prd triggers]
-    M --> N[Build & Test]
-    N --> O{Event == push?}
-    O -->|Yes| P[Dev TF Apply + Deploy Dev]
-    O -->|No| Q[Skip Dev apply/deploy]
-    P --> R[Prd TF Apply]
+    M --> O{Scheduled/manual event, changes, or tainted dev state?}
+    O -->|Yes| N[Build & Test]
+    N --> P[Dev TF Apply + Deploy Dev + Health]
+    O -->|No: unchanged push| Q[Read existing Dev outputs]
+    P --> R[Prd TF Apply or existing outputs]
     Q --> R
-    R --> S[Deploy Prd]
+    R --> S[Deploy Prd + Health when source / Terraform changed]
 
     style D fill:#e1f5ff
     style F fill:#e1f5ff
@@ -85,6 +89,7 @@ graph TD
 - **dotnet-func-ci**: Build and test the function app.
 - **terraform-plan** / **terraform-plan-and-apply**: Init, plan, and optionally apply Terraform.
 - **deploy-function-app**: Deploy Azure Function Apps from build artifacts.
+- `.github/scripts/wait-for-function-health.sh`: Fail deployment if the application does not expose healthy liveness and readiness endpoints within five minutes. Used by promotion, manual development and PR development deployments.
 
 ## Quick Reference
 
@@ -93,7 +98,8 @@ graph TD
 | Feature commit     | build-and-test | Push to feature/bugfix   | ❌             | ❌                    |
 | PR validation      | pr-verify      | PR to main               | Dev plan      | Optional dev (label) |
 | Merge to main      | deploy-prd     | Push to main             | Dev+Prd apply | Dev+Prd              |
-| Weekly maintenance | deploy-prd     | Thursday 3am UTC         | Prd apply     | Prd                  |
+| Weekly maintenance | deploy-prd     | Thursday 3am UTC         | Dev+Prd apply | Dev+Prd, health-gated |
+| Manual promotion   | deploy-prd     | Manual dispatch          | Dev+Prd apply | Dev+Prd, health-gated |
 | Manual dev refresh | deploy-dev     | Manual dispatch          | Dev apply     | Dev                  |
 | Code quality       | codequality    | Monday 3am UTC + PR/push | ❌             | ❌                    |
 
