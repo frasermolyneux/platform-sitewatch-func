@@ -206,10 +206,6 @@ availability_tests = [
   }
 ]
 
-app_service_plan = {
-  sku = "Y1"
-}
-
 platform_workloads_state = {
   resource_group_name  = "rg-tf-platform-workloads-prd-uksouth-01"
   storage_account_name = "sadz9ita659lj9xb3"

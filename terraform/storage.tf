@@ -16,7 +16,7 @@ resource "azurerm_storage_account" "function_app_storage" {
   allow_nested_items_to_be_public = false
 
   local_user_enabled        = true
-  shared_access_key_enabled = true
+  shared_access_key_enabled = false
 
   identity {
     type = "SystemAssigned"

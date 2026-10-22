@@ -31,10 +31,8 @@ dimensions are preserved.
 AzureRM 5.9 injects a reserved, empty-key `AzureWebJobsStorage` connection string even for
 identity-based deployments. Before package upload, the managed deployment verifies the identity
 host-storage settings and removes only that conflicting setting, without logging connection
-strings. This prevents the legacy string from overriding managed identity while shared-key
-authentication is unused by the Flex host. Account-wide shared-key access remains enabled
-temporarily because the retained legacy Functions need it for rollback; disabling it before
-legacy retirement would break that rollback path.
+strings. This prevents the legacy string from overriding managed identity. Shared-key access
+is disabled on the storage accounts; both deployment and host access use managed identity.
 
 Zone redundancy is deliberately disabled: Flex would bill at least two always-ready instances
 per scaling group even when the configured count is zero
@@ -47,10 +45,11 @@ A subscription administrator must register the `Microsoft.App` resource provider
 first Flex deployment in that subscription. This bootstrap prerequisite does not require
 granting the workload CI identity subscription-wide permissions.
 
-The migration first adds Flex Functions alongside the legacy Linux Consumption resources.
-Legacy probe configuration is held unchanged for rollback. Remove the legacy Functions, plans
-and their role assignments only after development and all three production regions have passed
-health checks and emitted genuine availability telemetry.
+The Flex migration was staged alongside the legacy Linux Consumption resources. Development
+and all three production regions passed live health checks and emitted genuine availability
+telemetry before the separate legacy-retirement revision removed the old Functions, Y1 plans
+and their identity role assignments. Existing storage, vaults, Application Insights resources,
+telemetry targets and availability alerts are preserved.
 Scheduled promotions use the same verified development stage; they cannot mutate production
 while skipping development deployment and health checks.
 
