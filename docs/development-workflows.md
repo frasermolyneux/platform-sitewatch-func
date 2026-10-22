@@ -20,9 +20,10 @@ Target: Engineers working on platform-sitewatch-func (Azure Functions uptime che
 ### Production Promotion
 - **deploy-prd.yml**: Promotion pipeline
   - Runs on pushes to `main`, the weekly Thursday 3am UTC schedule, and manual dispatch.
+  - Scheduled and manual events force both change flags to true in `detect-changes/v1.0`: they are full Build → Dev apply/deploy/health → Prd apply/deploy/health promotions, even without a source diff.
   - Source or Terraform changes, or tainted development state, trigger Build → Dev plan/apply → Deploy Dev for every event type.
   - A failed or cancelled build blocks development apply; failed development deployment or health checks block production promotion.
-  - With no relevant changes or tainted development state, the development stage reads existing outputs without rebuilding or deploying.
+  - Only push events with no relevant changes or tainted development state read existing development outputs without rebuilding or deploying.
   - Production applies Terraform when it changed and otherwise reads existing outputs; source or Terraform changes deploy the production application, including newly created Flex Functions.
   - Development must pass liveness and readiness before production promotion; production regions deploy sequentially with the same bounded health gate.
 
@@ -61,10 +62,10 @@ graph TD
     J --> K
     K --> L[Merge PR]
     L --> M[deploy-prd triggers]
-    M --> O{Source / Terraform changes or tainted dev state?}
+    M --> O{Scheduled/manual event, changes, or tainted dev state?}
     O -->|Yes| N[Build & Test]
     N --> P[Dev TF Apply + Deploy Dev + Health]
-    O -->|No| Q[Read existing Dev outputs]
+    O -->|No: unchanged push| Q[Read existing Dev outputs]
     P --> R[Prd TF Apply or existing outputs]
     Q --> R
     R --> S[Deploy Prd + Health when source / Terraform changed]
@@ -97,8 +98,8 @@ graph TD
 | Feature commit     | build-and-test | Push to feature/bugfix   | ❌             | ❌                    |
 | PR validation      | pr-verify      | PR to main               | Dev plan      | Optional dev (label) |
 | Merge to main      | deploy-prd     | Push to main             | Dev+Prd apply | Dev+Prd              |
-| Weekly maintenance | deploy-prd     | Thursday 3am UTC         | Change/state-based Dev+Prd | Change/state-based Dev+Prd |
-| Manual promotion   | deploy-prd     | Manual dispatch          | Change/state-based Dev+Prd | Change/state-based Dev+Prd |
+| Weekly maintenance | deploy-prd     | Thursday 3am UTC         | Dev+Prd apply | Dev+Prd, health-gated |
+| Manual promotion   | deploy-prd     | Manual dispatch          | Dev+Prd apply | Dev+Prd, health-gated |
 | Manual dev refresh | deploy-dev     | Manual dispatch          | Dev apply     | Dev                  |
 | Code quality       | codequality    | Monday 3am UTC + PR/push | ❌             | ❌                    |
 
