@@ -39,11 +39,18 @@ repository's fail-fast configuration style — when:
 This keeps the `siteId`/`componentId` relationship enforced at the producer, not just assumed by
 the consumer.
 
+The mirrored `contract/status-monitoring-bindings.json` additionally declares the canonical
+public inputs, resource aliases, regions and collection intervals. Production Terraform variable
+validation requires exactly one configured producer check for every consumed binding with the
+same cadence and telemetry destination, and requires the complete regional deployment set.
+Consumer catalogue tests compare all brand projections with this same fixture. Update both copies
+together; a missing binding is a release failure, not permission for status to collect it itself.
+
 ## Deployment order
 
-Because `platform-status-web` always forces a `customDimensions.siteId` filter onto every
-Application Insights query (see that repo's `TelemetryFilters.WithSiteId`) and classifies live
-status per `customDimensions.region`, **this producer must be deployed before**
+Because `platform-status-web` explicitly filters owning site/component/check identities and
+selects the latest native measurement per region rather than averaging a success window,
+**this producer must be deployed before**
 `platform-status-web`/`status-pages` content starts depending on these dimensions or on the
 regional live-status query. Verify complete regional observations before cutting over existing
 public coverage. A missing or stale measurement must never become a healthy observation.
