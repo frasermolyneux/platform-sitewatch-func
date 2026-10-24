@@ -203,6 +203,310 @@ availability_tests = [
     severity     = "high"
     site         = "mx"
     component    = "mx.sitewatch.radar"
+  },
+  {
+    workload         = "geo-location"
+    environment      = "prd"
+    app              = "mx.geo-location-web.routing"
+    app_insights     = "platform"
+    uri              = "https://www.geo-location.net/api/health/live"
+    severity         = "high"
+    site             = "mx"
+    component        = "mx.sitewatch.geo-location-web"
+    check_id         = "mx.geo-location-web.routing"
+    interval_seconds = 300
+    retries          = 0
+    follow_redirects = false
+    headers_only     = true
+  },
+  {
+    workload         = "bqba"
+    environment      = "prd"
+    app              = "mx.probe.bqba"
+    app_insights     = "platform"
+    uri              = "https://bqba.co.uk/"
+    severity         = "moderate"
+    site             = "mx"
+    component        = "mx.probe.bqba"
+    interval_seconds = 300
+    retries          = 0
+    follow_redirects = false
+    headers_only     = true
+  },
+  {
+    workload         = "dm-electrical-services"
+    environment      = "prd"
+    app              = "mx.probe.dm-electrical-services"
+    app_insights     = "platform"
+    uri              = "https://www.dm-electricalservices.co.uk/"
+    severity         = "moderate"
+    site             = "mx"
+    component        = "mx.probe.dm-electrical-services"
+    interval_seconds = 300
+    retries          = 0
+    follow_redirects = false
+    headers_only     = true
+  },
+  {
+    workload         = "craftpledge"
+    environment      = "prd"
+    app              = "mx.probe.craftpledge"
+    app_insights     = "platform"
+    uri              = "https://www.craftpledge.org/"
+    severity         = "moderate"
+    site             = "mx"
+    component        = "mx.probe.craftpledge"
+    interval_seconds = 300
+    method           = "HEAD"
+    retries          = 0
+    follow_redirects = false
+    headers_only     = true
+  },
+  {
+    workload         = "talkwithtiles"
+    environment      = "prd"
+    app              = "mx.probe.talkwithtiles"
+    app_insights     = "platform"
+    uri              = "https://talkwithtiles.molyneux.me/"
+    severity         = "moderate"
+    site             = "mx"
+    component        = "mx.probe.talkwithtiles"
+    interval_seconds = 300
+    method           = "HEAD"
+    retries          = 0
+    follow_redirects = false
+    headers_only     = true
+  },
+  {
+    workload         = "travel-itinerary"
+    environment      = "prd"
+    app              = "mx.probe.travel-itinerary"
+    app_insights     = "platform"
+    uri              = "https://travelplans.molyneux.me/"
+    severity         = "moderate"
+    site             = "mx"
+    component        = "mx.probe.travel-itinerary"
+    interval_seconds = 300
+    method           = "HEAD"
+    retries          = 0
+    follow_redirects = false
+    headers_only     = true
+  },
+  {
+    workload         = "twenty-one"
+    environment      = "prd"
+    app              = "mx.probe.twenty-one"
+    app_insights     = "platform"
+    uri              = "https://twenty-one.molyneux.me/"
+    severity         = "moderate"
+    site             = "mx"
+    component        = "mx.probe.twenty-one"
+    interval_seconds = 300
+    method           = "HEAD"
+    retries          = 0
+    follow_redirects = false
+    headers_only     = true
+  },
+  {
+    workload         = "trip-side-kick"
+    environment      = "prd"
+    app              = "mx.probe.trip-side-kick-website"
+    app_insights     = "platform"
+    uri              = "https://tripsidekick.net/"
+    severity         = "moderate"
+    site             = "mx"
+    component        = "mx.probe.trip-side-kick-website"
+    interval_seconds = 300
+    method           = "HEAD"
+    retries          = 0
+    follow_redirects = false
+    headers_only     = true
+  },
+  {
+    workload         = "trip-side-kick"
+    environment      = "prd"
+    app              = "mx.probe.trip-side-kick-app"
+    app_insights     = "platform"
+    uri              = "https://tripsidekick.app/api/health/live"
+    severity         = "moderate"
+    site             = "mx"
+    component        = "mx.probe.trip-side-kick-app"
+    interval_seconds = 300
+    method           = "HEAD"
+    retries          = 0
+    follow_redirects = false
+    headers_only     = true
+  },
+  {
+    workload         = "portal-web"
+    environment      = "prd"
+    app              = "xi.portal-web.routing"
+    app_insights     = "platform"
+    uri              = "https://portal.xtremeidiots.com/api/health/live"
+    severity         = "high"
+    site             = "xi"
+    component        = "xi.sitewatch.portal-web"
+    check_id         = "xi.portal-web.routing"
+    interval_seconds = 300
+    retries          = 0
+    follow_redirects = false
+    headers_only     = true
+  },
+  {
+    workload         = "portal-repository-v1"
+    environment      = "prd"
+    app              = "xi.repository-api-v1.readiness"
+    app_insights     = "platform"
+    uri              = "https://app-portal-repo-prd-uksouth-v1-655b79d54d89.azurewebsites.net/v1.0/health/ready"
+    severity         = "high"
+    site             = "xi"
+    component        = "xi.sitewatch.repository-api-v1"
+    check_id         = "xi.repository-api-v1.readiness"
+    interval_seconds = 300
+    retries          = 0
+    follow_redirects = false
+    headers_only     = true
+  },
+  {
+    workload         = "portal-repository-v2"
+    environment      = "prd"
+    app              = "xi.repository-api-v2.readiness"
+    app_insights     = "platform"
+    uri              = "https://app-portal-repo-prd-uksouth-v2-655b79d54d89.azurewebsites.net/v2.0/health/ready"
+    severity         = "high"
+    site             = "xi"
+    component        = "xi.sitewatch.repository-api-v2"
+    check_id         = "xi.repository-api-v2.readiness"
+    interval_seconds = 300
+    retries          = 0
+    follow_redirects = false
+    headers_only     = true
+  },
+  {
+    workload         = "portal-server-events"
+    environment      = "prd"
+    app              = "xi.sitewatch.server-events"
+    app_insights     = "platform"
+    uri              = "https://fn-portal-server-events-prd-uksouth-3e4bb7b00601.azurewebsites.net/api/health/live"
+    severity         = "high"
+    site             = "xi"
+    component        = "xi.sitewatch.server-events"
+    interval_seconds = 60
+    retries          = 0
+    follow_redirects = false
+    headers_only     = true
+  },
+  {
+    workload         = "xi-cdn"
+    environment      = "prd"
+    app              = "xi.probe.cdn"
+    app_insights     = "platform"
+    uri              = "https://cdn.xtremeidiots.com/_platform/health"
+    severity         = "moderate"
+    site             = "xi"
+    component        = "xi.probe.cdn"
+    interval_seconds = 300
+    retries          = 0
+    follow_redirects = false
+    headers_only     = true
+  },
+  {
+    workload         = "xi-redirect-manager"
+    environment      = "prd"
+    app              = "xi.probe.maps"
+    app_insights     = "platform"
+    uri              = "https://maps.xtremeidiots.com/"
+    severity         = "moderate"
+    site             = "xi"
+    component        = "xi.probe.maps"
+    interval_seconds = 300
+    retries          = 0
+    follow_redirects = false
+    headers_only     = true
+  },
+  {
+    workload         = "xi-arcade"
+    environment      = "prd"
+    app              = "xi.probe.arcade"
+    app_insights     = "platform"
+    uri              = "https://www.xtremeidiots.com/arcade/"
+    severity         = "moderate"
+    site             = "xi"
+    component        = "xi.probe.arcade"
+    interval_seconds = 300
+    retries          = 0
+    follow_redirects = false
+    headers_only     = true
+  },
+  {
+    workload         = "xi-casino"
+    environment      = "prd"
+    app              = "xi.probe.casino"
+    app_insights     = "platform"
+    uri              = "https://www.xtremeidiots.com/casino/"
+    severity         = "moderate"
+    site             = "xi"
+    component        = "xi.probe.casino"
+    interval_seconds = 300
+    retries          = 0
+    follow_redirects = false
+    headers_only     = true
+  },
+  {
+    workload         = "xi-dailygames"
+    environment      = "prd"
+    app              = "xi.probe.dailygames"
+    app_insights     = "platform"
+    uri              = "https://www.xtremeidiots.com/dailygames/"
+    severity         = "moderate"
+    site             = "xi"
+    component        = "xi.probe.dailygames"
+    interval_seconds = 300
+    retries          = 0
+    follow_redirects = false
+    headers_only     = true
+  },
+  {
+    workload         = "xi-powerball"
+    environment      = "prd"
+    app              = "xi.probe.powerball"
+    app_insights     = "platform"
+    uri              = "https://www.xtremeidiots.com/powerball/"
+    severity         = "moderate"
+    site             = "xi"
+    component        = "xi.probe.powerball"
+    interval_seconds = 300
+    retries          = 0
+    follow_redirects = false
+    headers_only     = true
+  },
+  {
+    workload         = "xi-bank"
+    environment      = "prd"
+    app              = "xi.probe.wallet"
+    app_insights     = "platform"
+    uri              = "https://www.xtremeidiots.com/wallet/"
+    severity         = "moderate"
+    site             = "xi"
+    component        = "xi.probe.wallet"
+    interval_seconds = 300
+    retries          = 0
+    follow_redirects = false
+    headers_only     = true
+  },
+  {
+    workload         = "xi-freezetag-stats"
+    environment      = "prd"
+    app              = "xi.probe.freezetag"
+    app_insights     = "platform"
+    uri              = "https://www.xtremeidiots.com/stats/stats.html"
+    severity         = "moderate"
+    site             = "xi"
+    component        = "xi.probe.freezetag"
+    interval_seconds = 300
+    retries          = 0
+    follow_redirects = false
+    headers_only     = true
   }
 ]
 

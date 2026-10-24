@@ -11,7 +11,7 @@ namespace MX.Platform.SiteWatch.App.Tests;
 /// </summary>
 public sealed class TelemetryContractFixtureTests
 {
-    private static readonly string[] EmittedDimensionNames = ["componentId", "siteId", "region"];
+    private static readonly string[] EmittedDimensionNames = ["componentId", "siteId", "region", "checkId"];
 
     [Fact]
     public void EmittedDimensionNames_MatchContractFixture()
@@ -24,6 +24,18 @@ public sealed class TelemetryContractFixtureTests
             .ToArray();
 
         Assert.Equal(EmittedDimensionNames.OrderBy(name => name, StringComparer.Ordinal), declaredDimensions.OrderBy(name => name, StringComparer.Ordinal));
+        var emitted = ExternalHealthCheck.BuildContractDimensions(new TestConfig
+        {
+            App = "fixture",
+            Site = "mx",
+            Component = "mx.fixture",
+            AppInsights = "default",
+            Uri = "https://example.invalid/",
+            CheckId = "mx.fixture.readiness"
+        }, "uksouth");
+        Assert.Equal(declaredDimensions.OrderBy(name => name, StringComparer.Ordinal),
+            emitted.Keys.OrderBy(name => name, StringComparer.Ordinal));
+        Assert.Equal("mx.fixture.readiness", emitted["checkId"]);
     }
 
     [Fact]

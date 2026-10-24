@@ -39,7 +39,8 @@ locals {
 
   app_insights_map = merge(
     {
-      "default" = azurerm_application_insights.ai[var.locations[0]]
+      "default"  = azurerm_application_insights.ai[var.locations[0]]
+      "platform" = azurerm_application_insights.ai[var.locations[0]]
     },
     var.portal_app_insights == null ? {} : { "portal" = data.azurerm_application_insights.portal[0] },
     var.geolocation_app_insights == null ? {} : { "geolocation" = data.azurerm_application_insights.geolocation[0] }

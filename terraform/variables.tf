@@ -34,14 +34,20 @@ variable "portal_app_insights" {
 
 variable "availability_tests" {
   type = list(object({
-    workload     = string
-    environment  = string
-    app          = string
-    app_insights = string
-    uri          = string
-    severity     = string
-    site         = string
-    component    = optional(string)
+    workload         = string
+    environment      = string
+    app              = string
+    app_insights     = string
+    uri              = string
+    severity         = string
+    site             = string
+    component        = optional(string)
+    check_id         = optional(string)
+    interval_seconds = optional(number, 30)
+    method           = optional(string, "GET")
+    retries          = optional(number, 3)
+    follow_redirects = optional(bool, true)
+    headers_only     = optional(bool, false)
   }))
 }
 
