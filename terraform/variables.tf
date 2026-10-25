@@ -34,15 +34,39 @@ variable "portal_app_insights" {
 
 variable "availability_tests" {
   type = list(object({
-    workload     = string
-    environment  = string
-    app          = string
-    app_insights = string
-    uri          = string
-    severity     = string
-    site         = string
-    component    = optional(string)
+    workload         = string
+    environment      = string
+    app              = string
+    app_insights     = string
+    uri              = string
+    severity         = string
+    site             = string
+    component        = optional(string)
+    check_id         = optional(string)
+    interval_seconds = optional(number, 30)
+    method           = optional(string, "GET")
+    retries          = optional(number, 3)
+    follow_redirects = optional(bool, true)
+    headers_only     = optional(bool, false)
   }))
+
+  validation {
+    condition = var.environment != "prd" || (
+      sort(var.locations) == sort(jsondecode(file("${path.module}/../contract/status-monitoring-bindings.json")).regions)
+      && alltrue([
+        for reference in jsondecode(file("${path.module}/../contract/status-monitoring-bindings.json")).checks :
+        length([for test in var.availability_tests : test if(
+          test.site == reference.siteId && coalesce(test.component, test.app) == reference.componentId
+          && coalesce(test.check_id, test.component, test.app) == reference.checkId
+          && test.interval_seconds == reference.intervalSeconds
+          && sort(test.app_insights == "default" ? [
+            for location in var.locations : "sitewatch-${location}"
+          ] : [test.app_insights]) == sort(reference.resources)
+        )]) == 1
+      ])
+    )
+    error_message = "Production monitoring must preserve every status-consumed identity, cadence, regional source and telemetry destination declared in the shared bindings contract."
+  }
 }
 
 variable "platform_workloads_state" {

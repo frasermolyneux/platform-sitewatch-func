@@ -37,21 +37,26 @@ public partial class ExternalHealthCheck
     private readonly IConfiguration configuration;
     private readonly IOptionsMonitor<SiteWatchOptions> optionsMonitor;
     private readonly HttpClient httpClient;
+    private readonly HttpClient noRedirectClient;
     private readonly IAvailabilityTelemetry availabilityTelemetry;
     private readonly ILogger<ExternalHealthCheck> logger;
+    private readonly AvailabilitySchedule schedule;
 
     public ExternalHealthCheck(
         IConfiguration configuration,
         IOptionsMonitor<SiteWatchOptions> optionsMonitor,
         IHttpClientFactory httpClientFactory,
         IAvailabilityTelemetry availabilityTelemetry,
-        ILogger<ExternalHealthCheck> logger)
+        ILogger<ExternalHealthCheck> logger,
+        AvailabilitySchedule schedule)
     {
         this.configuration = configuration;
         this.optionsMonitor = optionsMonitor;
         httpClient = httpClientFactory.CreateClient(SiteWatchHttpClient.Name);
+        noRedirectClient = httpClientFactory.CreateClient(SiteWatchHttpClient.NoRedirectName);
         this.availabilityTelemetry = availabilityTelemetry;
         this.logger = logger;
+        this.schedule = schedule;
     }
 
     [Function(nameof(ExternalHealthCheck))]
@@ -89,7 +94,9 @@ public partial class ExternalHealthCheck
         await Parallel.ForEachAsync(
             testConfigs,
             parallelOptions,
-            (testConfig, ct) => ExecuteTestAsync(testConfig, location, ct));
+            (testConfig, ct) => schedule.TrySchedule(testConfig, DateTimeOffset.UtcNow)
+                ? ExecuteTestAsync(testConfig, location, ct)
+                : ValueTask.CompletedTask);
     }
 
     private async ValueTask ExecuteTestAsync(TestConfig testConfig, string location, CancellationToken cancellationToken)
@@ -199,6 +206,7 @@ public partial class ExternalHealthCheck
             ["componentId"] = string.IsNullOrWhiteSpace(testConfig.Component) ? testConfig.App : testConfig.Component,
             ["siteId"] = testConfig.Site,
             ["region"] = location,
+            ["checkId"] = testConfig.EffectiveCheckId,
         };
     }
 
@@ -230,8 +238,8 @@ public partial class ExternalHealthCheck
         var retryPolicy = Policy
             .Handle<HttpRequestException>()
             .Or<TaskCanceledException>()
-            .OrResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
-            .WaitAndRetryAsync(3, RetryBackoff,
+            .OrResult<HttpResponseMessage>(response => !IsHealthy(response, testConfig))
+            .WaitAndRetryAsync(testConfig.Retries, RetryBackoff,
                 onRetry: (outcome, timespan, retryAttempt, context) =>
                 {
                     if (outcome.Exception is not null)
@@ -264,11 +272,15 @@ public partial class ExternalHealthCheck
                     }
                 });
 
-        using var response = await retryPolicy.ExecuteAsync(
-            ct => httpClient.GetAsync(uri, ct),
-            cancellationToken);
+        var client = testConfig.FollowRedirects ? httpClient : noRedirectClient;
+        using var response = await retryPolicy.ExecuteAsync(async ct =>
+        {
+            using var request = new HttpRequestMessage(new HttpMethod(testConfig.Method), uri);
+            return await client.SendAsync(request, testConfig.HeadersOnly
+                ? HttpCompletionOption.ResponseHeadersRead : HttpCompletionOption.ResponseContentRead, ct);
+        }, cancellationToken);
 
-        if (!response.IsSuccessStatusCode)
+        if (!IsHealthy(response, testConfig))
         {
             var statusCode = (int)response.StatusCode;
             var statusClass = StatusClass(statusCode);
@@ -285,6 +297,11 @@ public partial class ExternalHealthCheck
                 inner: null,
                 statusCode: response.StatusCode);
         }
+    }
+
+    private static bool IsHealthy(HttpResponseMessage response, TestConfig test)
+    {
+        return response.IsSuccessStatusCode || (!test.FollowRedirects && (int)response.StatusCode is >= 300 and < 400);
     }
 
     /// <summary>

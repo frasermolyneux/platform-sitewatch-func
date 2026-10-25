@@ -158,6 +158,71 @@ public sealed class ExternalHealthCheckTests
     }
 
     [Fact]
+    public async Task HeadBaselineAcceptsRedirectWithoutRetryingAndPreservesCheckIdentity()
+    {
+        using var handler = new StubHandler((request, _) =>
+        {
+            Assert.Equal(HttpMethod.Head, request.Method);
+            return new HttpResponseMessage(HttpStatusCode.Found);
+        });
+        using var harness = new Harness(handler);
+        var config = NewTestConfig();
+        config.Method = "HEAD";
+        config.FollowRedirects = false;
+        config.Retries = 0;
+        config.CheckId = "xi.fixture.routing";
+        await harness.ExecuteAsync(config);
+        Assert.Equal(1, handler.CallCount);
+        var entry = Assert.Single(harness.Spy.Entries);
+        Assert.True(entry.Success);
+        Assert.Equal("xi.fixture.routing", entry.Properties!["checkId"]);
+    }
+
+    [Fact]
+    public async Task BaselineFailureHonoursZeroRetryBudget()
+    {
+        using var handler = new StubHandler((_, _) => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+        using var harness = new Harness(handler);
+        var config = NewTestConfig();
+        config.Retries = 0;
+        await harness.ExecuteAsync(config);
+        Assert.Equal(1, handler.CallCount);
+        Assert.False(Assert.Single(harness.Spy.Entries).Success);
+    }
+
+    [Theory]
+    [InlineData(false, false, 4)]
+    [InlineData(true, true, 1)]
+    public async Task HeadersOnlyBaselinesDoNotChangeExistingBodyTransferFailureSemantics(
+        bool headersOnly, bool expectedSuccess, int requests)
+    {
+        using var handler = new StubHandler((_, _) => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new FailingBody()
+        });
+        using var harness = new Harness(handler);
+        var config = NewTestConfig();
+        config.HeadersOnly = headersOnly;
+        await harness.ExecuteAsync(config);
+        Assert.Equal(requests, handler.CallCount);
+        Assert.Equal(expectedSuccess, Assert.Single(harness.Spy.Entries).Success);
+    }
+
+    private sealed class FailingBody : HttpContent
+    {
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context)
+        {
+            return Task.FromException(new IOException("Incomplete response body."));
+        }
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = 1;
+            return true;
+        }
+    }
+
+    [Fact]
     public void DefaultRetryBackoff_Produces_2_4_8_SecondProgression()
     {
         // Documents the production backoff schedule; the RetryBackoff seam exists for tests only
@@ -167,7 +232,7 @@ public sealed class ExternalHealthCheckTests
             new StaticOptionsMonitor(new SiteWatchOptions()),
             new StubHttpClientFactory(new StubHandler((_, _) => new HttpResponseMessage(HttpStatusCode.OK))),
             new SpyAvailabilityTelemetry(),
-            NullLogger<ExternalHealthCheck>.Instance);
+            NullLogger<ExternalHealthCheck>.Instance, new AvailabilitySchedule());
 
         Assert.Equal(TimeSpan.FromSeconds(2), target.RetryBackoff(1));
         Assert.Equal(TimeSpan.FromSeconds(4), target.RetryBackoff(2));
@@ -184,7 +249,7 @@ public sealed class ExternalHealthCheckTests
             new StaticOptionsMonitor(new SiteWatchOptions()),
             new StubHttpClientFactory(new StubHandler((_, _) => new HttpResponseMessage(HttpStatusCode.OK))),
             new SpyAvailabilityTelemetry(),
-            NullLogger<ExternalHealthCheck>.Instance);
+            NullLogger<ExternalHealthCheck>.Instance, new AvailabilitySchedule());
 
         Assert.Throws<ArgumentNullException>(() => target.RetryBackoff = null!);
     }
@@ -255,7 +320,7 @@ public sealed class ExternalHealthCheckTests
                 new StaticOptionsMonitor(new SiteWatchOptions()),
                 factory,
                 Spy,
-                LoggerFactory.CreateLogger<ExternalHealthCheck>())
+                LoggerFactory.CreateLogger<ExternalHealthCheck>(), new AvailabilitySchedule())
             {
                 RetryBackoff = _ => TimeSpan.Zero,
             };

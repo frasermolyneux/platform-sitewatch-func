@@ -40,10 +40,13 @@ Terraform init, validate, or plan requires the appropriate Azure/OIDC context.
 
 - `ExternalHealthCheck` runs every 30 seconds, skips when external checks are disabled, and probes
   configured tests in parallel with a maximum concurrency of five.
-- Preserve the named client's five-second timeout, Polly retry behavior (three retries with
-  2/4/8-second backoff), cancellation propagation, token replacement, and one terminal
-  availability result per completed check.
-- Availability results must include the `componentId`, `siteId`, and `region` custom dimensions
+- Preserve the five-second timeout and existing defaults: GET, redirects enabled, 30-second
+  interval and three Polly retries with 2/4/8-second backoff. Reviewed public baselines explicitly
+  use zero retries and longer intervals; do not silently change existing checks' budgets.
+- Per-check scheduling is host-singleton state. Collect immediately on startup and when due,
+  including delayed timer invocations; do not gate slow checks on an exact UTC timer slot.
+  Preserve cancellation, token replacement and one terminal availability result per completed check.
+- Availability results must include the `componentId`, `checkId`, `siteId`, and `region` custom dimensions
   defined by `contract/availability-telemetry-contract.json`. Configuration validation enforces
   the site/component relationship.
 - Telemetry can fan out to named Application Insights targets; unknown/default targets fall back
@@ -57,6 +60,9 @@ Terraform init, validate, or plan requires the appropriate Azure/OIDC context.
 - External target URLs and replacement tokens may be sensitive; keep secrets in app settings or
   Key Vault rather than source control.
 - Deployments are performed by GitHub Actions; do not deploy from routine development commands.
+- Sitewatch and platform-monitoring own availability measurement, targets, cadence, operational
+  thresholds and alerts. Status consumes these signals; never move workload probing into the
+  status runtime to avoid monitoring cost. Surface any coverage/cost trade-off for approval.
 
 ## Authoritative repository docs
 

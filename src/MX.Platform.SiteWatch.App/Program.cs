@@ -45,9 +45,14 @@ var host = new HostBuilder()
         {
             client.Timeout = TimeSpan.FromSeconds(5);
         });
+        services.AddHttpClient(SiteWatchHttpClient.NoRedirectName, client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(5);
+        }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
         services.AddLogging();
         services.AddObservability();
         services.AddHealthChecks();
+        services.AddSingleton<AvailabilitySchedule>();
 
         services.Configure<SiteWatchOptions>(config.GetSection("SiteWatch"));
 

@@ -54,6 +54,7 @@ resource "azurerm_function_app_flex_consumption" "app" {
       "AzureWebJobsStorage__credential"  = "managedidentity"
       "test_config"                      = jsonencode(var.availability_tests)
       "SiteWatch__DisableExternalChecks" = tostring(var.disable_external_checks)
+      "SiteWatch__Telemetry__platform"   = azurerm_application_insights.ai[var.locations[0]].connection_string
       "xtremeidiots_forums_task_key"     = format("@Microsoft.KeyVault(VaultName=%s;SecretName=%s)", azurerm_key_vault.kv.name, azurerm_key_vault_secret.xtremeidiots_forums_task_key.name)
     },
     var.portal_app_insights == null ? {} : {

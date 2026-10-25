@@ -29,3 +29,25 @@ output "func_apps" {
     hostname            = app.default_hostname
   }]
 }
+
+output "status_monitoring_contract" {
+  description = "Read-only availability bindings for status consumers; deliberately excludes endpoint targets and credentials."
+  value = {
+    version  = 2
+    producer = "frasermolyneux/platform-sitewatch-func"
+    resources = merge(
+      { for location in var.locations : "sitewatch-${location}" => azurerm_application_insights.ai[location].id },
+      { for alias, resource in local.app_insights_map : alias => resource.id if alias != "default" }
+    )
+    checks = [for test in var.availability_tests : {
+      site_id                   = test.site
+      component_id              = coalesce(test.component, test.app)
+      check_id                  = coalesce(test.check_id, test.component, test.app)
+      expected_interval_seconds = test.interval_seconds
+      expected_regions          = var.locations
+      resource_aliases = test.app_insights == "default" || !contains(keys(local.app_insights_map), test.app_insights) ? [
+        for location in var.locations : "sitewatch-${location}"
+      ] : [test.app_insights]
+    }]
+  }
+}

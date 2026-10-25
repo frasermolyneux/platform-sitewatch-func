@@ -29,4 +29,25 @@ public class TestConfig
     /// </summary>
     [JsonPropertyName("component")]
     public string? Component { get; set; }
+
+    [JsonPropertyName("check_id")]
+    public string? CheckId { get; set; }
+
+    [JsonPropertyName("interval_seconds")]
+    public int IntervalSeconds { get; set; } = 30;
+
+    [JsonPropertyName("method")]
+    public string Method { get; set; } = "GET";
+
+    [JsonPropertyName("retries")]
+    public int Retries { get; set; } = 3;
+
+    [JsonPropertyName("follow_redirects")]
+    public bool FollowRedirects { get; set; } = true;
+
+    [JsonPropertyName("headers_only")]
+    public bool HeadersOnly { get; set; }
+
+    internal string EffectiveCheckId => CheckId ?? (string.IsNullOrWhiteSpace(Component) ? App : Component);
+
 }
