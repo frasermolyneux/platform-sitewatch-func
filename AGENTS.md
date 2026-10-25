@@ -28,7 +28,7 @@ dotnet test src/MX.Platform.SiteWatch.App.Tests/MX.Platform.SiteWatch.App.Tests.
 dotnet format src/MX.Platform.SiteWatch.slnx --verify-no-changes
 
 terraform -chdir=terraform fmt -check -recursive
-terraform -chdir=terraform init -backend-config=backends/dev.backend.hcl
+terraform -chdir=terraform init -lockfile=readonly -backend-config=backends/dev.backend.hcl
 terraform -chdir=terraform validate
 terraform -chdir=terraform plan -var-file=tfvars/dev.tfvars
 ```

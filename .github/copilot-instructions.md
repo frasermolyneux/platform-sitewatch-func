@@ -19,3 +19,7 @@
   Key Vault integration; it uses separate dev/prd backends and workload/monitoring remote state.
 - Keep target secrets and URL tokens in app settings or Key Vault.
 - Never commit credentials or generated `bin/`, `obj/`, `.terraform/`, or state files.
+
+## Terraform toolchain
+
+Commit each root's `.terraform-version` and `.terraform.lock.hcl`. Select the exact root CLI pin before invoking Terraform; normal initialization uses `-lockfile=readonly`. Regenerate provider selections only in a reviewed dependency-update PR; never commit state, plans, or `.terraform/`.
