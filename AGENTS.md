@@ -34,7 +34,7 @@ terraform -chdir=terraform plan -var-file=tfvars/dev.tfvars
 ```
 
 Use the SDK pinned by `global.json`. Run the smallest test selection that covers a code change.
-Terraform init, validate, or plan requires the appropriate Azure/OIDC context.
+Backend initialization and planning require the appropriate Azure/OIDC context. The shared main-only CI validation action uses `init -backend=false -lockfile=readonly` and `validate` without Azure credentials, state access, or planning.
 
 ## Contracts and constraints
 
