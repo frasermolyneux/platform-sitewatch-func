@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'src/**'
+      - 'contract/**'
+      - 'terraform/**'
   workflow_dispatch:
   schedule:
     - cron: "0 5 * * 5"
@@ -21,7 +25,6 @@ jobs:
     outputs:
       src: ${{ steps.changes.outputs.src }}
       terraform: ${{ steps.changes.outputs.terraform }}
-      workload: ${{ steps.workload.outputs.src }}
     steps:
       - id: changes
         uses: frasermolyneux/actions/detect-changes@detect-changes/v1.0
@@ -29,19 +32,8 @@ jobs:
           filters: |
             src:src/**,contract/**
             terraform:terraform/**
-      - name: Detect deployable workload inputs
-        id: workload
-        uses: frasermolyneux/actions/detect-changes@detect-changes/v1.0
-        with:
-          perform-checkout: 'false'
-          filters: |
-            src:src/**,contract/**,terraform/**
 
   terraform-state-check-dev:
-    needs: [detect-changes]
-    if: |
-      (success()) &&
-      (github.event_name != 'push' || needs.detect-changes.outputs.workload == 'true')
     permissions:
       contents: read
       id-token: write
@@ -69,9 +61,8 @@ jobs:
       - detect-changes
       - terraform-state-check-dev
     if: |
-      (!failure() && !cancelled() &&
-      (needs.detect-changes.outputs.src == 'true' || needs.detect-changes.outputs.terraform == 'true' || needs.terraform-state-check-dev.outputs.state_tainted == 'true')) &&
-      (github.event_name != 'push' || needs.detect-changes.outputs.workload == 'true')
+      !failure() && !cancelled() &&
+      (needs.detect-changes.outputs.src == 'true' || needs.detect-changes.outputs.terraform == 'true' || needs.terraform-state-check-dev.outputs.state_tainted == 'true')
     runs-on: ubuntu-latest
     steps:
       - uses: frasermolyneux/actions/dotnet-func-ci@dotnet-func-ci/v2.1
@@ -84,9 +75,8 @@ jobs:
 
   terraform-plan-and-apply-dev:
     if: |
-      (!failure() && !cancelled() &&
-      (needs.build-and-test.result == 'success' || needs.build-and-test.result == 'skipped')) &&
-      (github.event_name != 'push' || needs.detect-changes.outputs.workload == 'true')
+      !failure() && !cancelled() &&
+      (needs.build-and-test.result == 'success' || needs.build-and-test.result == 'skipped')
     permissions:
       contents: read
       id-token: write
@@ -148,9 +138,8 @@ jobs:
     concurrency:
       group: ${{ github.repository }}-dev
     if: |
-      (!failure() && !cancelled() &&
-      (needs.detect-changes.outputs.src == 'true' || needs.detect-changes.outputs.terraform == 'true' || needs.terraform-state-check-dev.outputs.state_tainted == 'true')) &&
-      (github.event_name != 'push' || needs.detect-changes.outputs.workload == 'true')
+      !failure() && !cancelled() &&
+      (needs.detect-changes.outputs.src == 'true' || needs.detect-changes.outputs.terraform == 'true' || needs.terraform-state-check-dev.outputs.state_tainted == 'true')
     strategy:
       matrix:
         func_app: ${{ fromJSON(needs.terraform-plan-and-apply-dev.outputs.func_apps) }}
@@ -196,11 +185,10 @@ jobs:
     concurrency:
       group: ${{ github.repository }}-prd
     if: |
-      (!failure() && !cancelled() &&
+      !failure() && !cancelled() &&
       needs.terraform-plan-and-apply-dev.result == 'success' &&
       (needs.function-app-deploy-dev.result == 'success' ||
-      (needs.detect-changes.outputs.src != 'true' && needs.detect-changes.outputs.terraform != 'true'))) &&
-      (github.event_name != 'push' || needs.detect-changes.outputs.workload == 'true')
+      (needs.detect-changes.outputs.src != 'true' && needs.detect-changes.outputs.terraform != 'true'))
     steps:
       - if: needs.detect-changes.outputs.terraform == 'true'
         uses: frasermolyneux/actions/terraform-plan-and-apply@terraform-plan-and-apply/v2.0.0
@@ -250,10 +238,9 @@ jobs:
     concurrency:
       group: ${{ github.repository }}-prd
     if: |
-      (!failure() && !cancelled() &&
+      !failure() && !cancelled() &&
       needs.terraform-plan-and-apply-prd.result == 'success' &&
-      (needs.detect-changes.outputs.src == 'true' || needs.detect-changes.outputs.terraform == 'true')) &&
-      (github.event_name != 'push' || needs.detect-changes.outputs.workload == 'true')
+      (needs.detect-changes.outputs.src == 'true' || needs.detect-changes.outputs.terraform == 'true')
     strategy:
       max-parallel: 1
       matrix:
