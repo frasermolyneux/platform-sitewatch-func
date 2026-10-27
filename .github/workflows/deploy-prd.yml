@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'src/**'
+      - 'contract/**'
+      - 'terraform/**'
   workflow_dispatch:
   schedule:
     - cron: "0 5 * * 5"

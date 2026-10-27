@@ -34,7 +34,7 @@ terraform -chdir=terraform plan -var-file=tfvars/dev.tfvars
 ```
 
 Use the SDK pinned by `global.json`. Run the smallest test selection that covers a code change.
-Terraform init, validate, or plan requires the appropriate Azure/OIDC context.
+Backend initialization and planning require the appropriate Azure/OIDC context. The shared main-only CI validation action uses `init -backend=false -lockfile=readonly` and `validate` without Azure credentials, state access, or planning.
 
 ## Contracts and constraints
 
@@ -70,3 +70,6 @@ Terraform init, validate, or plan requires the appropriate Azure/OIDC context.
 - `docs/telemetry-contract.md`
 - `docs/development-workflows.md`
 - `contract/availability-telemetry-contract.json`
+
+
+CI-only main pushes are excluded by deployment push-path filters before workflow concurrency; they do not enqueue or displace cloud/backend deployments. Automatic deployment requires a change to the workload inputs already declared by the deployment filters; scheduled maintenance and explicit workflow dispatch retain their existing behavior. A deployment-workflow-only change requires explicit dispatch to exercise cloud operations.
