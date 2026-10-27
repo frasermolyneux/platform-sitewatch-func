@@ -70,3 +70,6 @@ Backend initialization and planning require the appropriate Azure/OIDC context. 
 - `docs/telemetry-contract.md`
 - `docs/development-workflows.md`
 - `contract/availability-telemetry-contract.json`
+
+
+CI-only main pushes run change detection but skip cloud/backend deployment jobs. Automatic deployment requires a change to the workload inputs already declared by the deployment filters; scheduled maintenance and explicit workflow dispatch retain their existing behavior. A deployment-workflow-only change requires explicit dispatch to exercise cloud operations.
