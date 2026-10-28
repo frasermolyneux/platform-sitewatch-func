@@ -33,6 +33,12 @@ identity-based deployments. Before package upload, the managed deployment verifi
 host-storage settings and removes only that conflicting setting, without logging connection
 strings. This prevents the legacy string from overriding managed identity. Shared-key access
 is disabled on the storage accounts; both deployment and host access use managed identity.
+Local-user access is also disabled. Blob soft-delete retains deleted blobs for seven days
+for recovery; retained deleted data continues to incur storage charges during that period.
+Storage public-network access is retained because the Flex deployment container and host
+storage use public Azure endpoints, and the Functions have no VNet integration or private
+route. The resource-local `CKV_AZURE_59` exception covers only these storage accounts; managed
+identity remains required, and it does not permit anonymous blob access.
 
 Zone redundancy is deliberately disabled: Flex would bill at least two always-ready instances
 per scaling group even when the configured count is zero
