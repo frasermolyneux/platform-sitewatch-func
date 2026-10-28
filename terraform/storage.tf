@@ -1,4 +1,5 @@
 resource "azurerm_storage_account" "function_app_storage" {
+  # checkov:skip=CKV_AZURE_59:Flex deployment and host storage require authenticated public endpoints without VNet integration; anonymous blob and shared-key access remain disabled.
   for_each = data.azurerm_resource_group.rg
 
   name                = "safn${random_id.environment_location_id[each.key].hex}"
@@ -15,8 +16,14 @@ resource "azurerm_storage_account" "function_app_storage" {
 
   allow_nested_items_to_be_public = false
 
-  local_user_enabled        = true
+  local_user_enabled        = false
   shared_access_key_enabled = false
+
+  blob_properties {
+    delete_retention_policy {
+      days = 7
+    }
+  }
 
   identity {
     type = "SystemAssigned"
