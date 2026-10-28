@@ -9,14 +9,13 @@ skip-check:
   - CKV_AZURE_114
   - CKV_GHA_7
   - CKV_GIT_1
-  # Profile: cost-optimised
+  # Profile: cost-optimised-resource-scoped
   - CKV2_AZURE_1
   - CKV2_AZURE_22
   - CKV_AZURE_199
   - CKV_AZURE_201
   - CKV_AZURE_206
   - CKV_AZURE_212
-  - CKV_AZURE_225
   - CKV_AZURE_229
   - CKV_AZURE_233
   - CKV_AZURE_165
