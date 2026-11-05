@@ -278,21 +278,6 @@ availability_tests = [
     headers_only     = true
   },
   {
-    workload         = "travel-itinerary"
-    environment      = "prd"
-    app              = "mx.probe.travel-itinerary"
-    app_insights     = "platform"
-    uri              = "https://travelplans.molyneux.me/"
-    severity         = "moderate"
-    site             = "mx"
-    component        = "mx.probe.travel-itinerary"
-    interval_seconds = 300
-    method           = "HEAD"
-    retries          = 0
-    follow_redirects = false
-    headers_only     = true
-  },
-  {
     workload         = "twenty-one"
     environment      = "prd"
     app              = "mx.probe.twenty-one"
