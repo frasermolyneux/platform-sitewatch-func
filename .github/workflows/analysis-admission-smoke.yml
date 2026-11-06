@@ -1,0 +1,19 @@
+name: Analysis admission smoke
+
+on:
+  push:
+    branches:
+      - frasermolyneux-shared-actions-pilot
+
+permissions: {}
+
+jobs:
+  analysis:
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    uses: frasermolyneux/actions/.github/workflows/repository-analysis-local.yml@a6271c58ed8e8f3b6fbdb738ac7566863fdc38c8 # repository-analysis/v1.1.0
+    with:
+      profile: '{"version":"repository-analysis-v1","languages":["csharp"],"sonar":false}'
+      expected-sha: ${{ github.sha }}
