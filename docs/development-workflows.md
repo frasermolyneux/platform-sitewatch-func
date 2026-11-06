@@ -32,7 +32,8 @@ Target: Engineers working on platform-sitewatch-func (Azure Functions uptime che
   - SonarCloud analysis, DevOps secure scanning, dependency review (on PRs)
 - **deploy-dev.yml**: Manual dispatch
   - Build → Dev plan/apply → Deploy Dev
-- **destroy-development.yml** / **destroy-environment.yml**: Manual destroys for dev or targeted environments
+- **destroy-development.yml**: Destroys Development daily at 23:45 UTC or on manual dispatch.
+- **destroy-environment.yml**: Destroys the selected Development or Production environment on manual dispatch.
 
 ## Standard Developer Flow
 
@@ -102,6 +103,8 @@ graph TD
 | Weekly maintenance | deploy-prd     | Friday 5am UTC           | Dev+Prd apply | Dev+Prd, health-gated |
 | Manual promotion   | deploy-prd     | Manual dispatch          | Dev+Prd apply | Dev+Prd, health-gated |
 | Manual dev refresh | deploy-dev     | Manual dispatch          | Dev apply     | Dev                  |
+| Development teardown | destroy-development | Daily 23:45 UTC or manual dispatch | Dev destroy | ❌ |
+| Targeted teardown  | destroy-environment | Manual dispatch     | Dev or Prd destroy | ❌ |
 | Code quality       | codequality    | Monday 5:15am UTC + PR/push | ❌          | ❌                    |
 
 ## Environment Secrets
