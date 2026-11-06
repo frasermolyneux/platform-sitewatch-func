@@ -7,32 +7,33 @@ Target: Engineers working on platform-sitewatch-func (Azure Functions uptime che
 ### Feature Development feature/*, bugfix/*, hotfix/*
 - **build-and-test.yml**: Runs on push to feature/bugfix/hotfix branches
   - Build and test via `dotnet-func-ci` targeting .NET 10
-  - No Terraform or deployments; fast feedback while iterating
+  - Runs a Development Terraform plan when Terraform files change; no deployments
 
 ### Pull Requests → main
 - **pr-verify.yml**: Validation pipeline (runs on PR open/updates/reopen/label changes)
   - Build and test
-  - Terraform plan for dev by default (skips drafts and dependabot)
+  - Terraform plan for dev by default (skips drafts)
   - Terraform plan+apply + deploy to dev when PR has `deploy-dev` label
   - Terraform plan for prd when PR has `run-prd-plan` label
   - Concurrency groups prevent parallel dev/prd plans and deployments
 
 ### Production Promotion
 - **deploy-prd.yml**: Promotion pipeline
-  - Runs on pushes to `main`, the weekly Thursday 3am UTC schedule, and manual dispatch.
+  - Runs on pushes to `main` changing `src/**`, `contract/**`, or `terraform/**`, the weekly Friday 5am UTC schedule, and manual dispatch. Workflow-only pushes do not start a promotion.
   - Scheduled and manual events force both change flags to true in `detect-changes/v1.0`: they are full Build → Dev apply/deploy/health → Prd apply/deploy/health promotions, even without a source diff.
   - Source or Terraform changes, or tainted development state, trigger Build → Dev plan/apply → Deploy Dev for every event type.
   - A failed or cancelled build blocks development apply; failed development deployment or health checks block production promotion.
-  - Only push events with no relevant changes or tainted development state read existing development outputs without rebuilding or deploying.
+  - When Terraform is unchanged and development state is intact, reads existing development outputs instead of applying Terraform.
   - Production applies Terraform when it changed and otherwise reads existing outputs; source or Terraform changes deploy the production application, including newly created Flex Functions.
   - Development must pass liveness and readiness before production promotion; production regions deploy sequentially with the same bounded health gate.
 
 ### Scheduled & On-Demand
-- **codequality.yml**: Weekly Monday 3am UTC + PR/push to main
+- **codequality.yml**: Weekly Monday 5:15am UTC + PR/push to main
   - SonarCloud analysis, DevOps secure scanning, dependency review (on PRs)
 - **deploy-dev.yml**: Manual dispatch
   - Build → Dev plan/apply → Deploy Dev
-- **destroy-development.yml** / **destroy-environment.yml**: Manual destroys for dev or targeted environments
+- **destroy-development.yml**: Destroys Development daily at 23:45 UTC or on manual dispatch.
+- **destroy-environment.yml**: Destroys the selected Development or Production environment on manual dispatch.
 
 ## Standard Developer Flow
 
@@ -61,14 +62,13 @@ graph TD
     I -->|No| K[Review & Approve]
     J --> K
     K --> L[Merge PR]
-    L --> M[deploy-prd triggers]
-    M --> O{Scheduled/manual event, changes, or tainted dev state?}
-    O -->|Yes| N[Build & Test]
-    N --> P[Dev TF Apply + Deploy Dev + Health]
-    O -->|No: unchanged push| Q[Read existing Dev outputs]
-    P --> R[Prd TF Apply or existing outputs]
-    Q --> R
-    R --> S[Deploy Prd + Health when source / Terraform changed]
+    L --> M{Source, contract or Terraform changed?}
+    M -->|No| T[No automatic promotion]
+    M -->|Yes| N[Build & Test]
+    N --> O[Dev: apply Terraform if needed, otherwise read outputs]
+    O --> P[Deploy Dev + Health]
+    P --> R[Prd: apply Terraform if changed, otherwise read outputs]
+    R --> S[Deploy Prd + Health]
 
     style D fill:#e1f5ff
     style F fill:#e1f5ff
@@ -82,12 +82,14 @@ graph TD
 
 - `deploy-dev` label: runs Terraform plan+apply for Development and deploys the function app to dev during PR validation.
 - `run-prd-plan` label: runs Terraform plan for Production during PR validation.
-- Draft PRs and dependabot PRs skip Terraform actions.
+- Draft PRs skip Terraform actions. Dependabot PRs can run the default Development plan and the label-triggered Production plan, but cannot run the Development deployment.
 
 ## Composite Actions (frasermolyneux/actions)
 
 - **dotnet-func-ci**: Build and test the function app.
 - **terraform-plan** / **terraform-plan-and-apply**: Init, plan, and optionally apply Terraform.
+- Terraform actions use the root's committed `.terraform-version` and provider lock file with readonly initialization. Plans, including PR plans, are stored in the private `tfplan` container in the initialized backend account; the environment's OIDC identity needs blob data write access, Azure CLI, and network access. Saved plans may contain secrets and require appropriate access and retention controls.
+- Optional Terraform additional arguments are parsed as quoted data, not shell expressions; shell expansion, pipes and redirection are not supported.
 - **deploy-function-app**: Deploy Azure Function Apps from build artifacts.
 - `.github/scripts/wait-for-function-health.sh`: Fail deployment if the application does not expose healthy liveness and readiness endpoints within five minutes. Used by promotion, manual development and PR development deployments.
 
@@ -95,13 +97,15 @@ graph TD
 
 | Scenario           | Workflow       | Trigger                  | Terraform     | Deploy               |
 | ------------------ | -------------- | ------------------------ | ------------- | -------------------- |
-| Feature commit     | build-and-test | Push to feature/bugfix   | ❌             | ❌                    |
+| Feature commit     | build-and-test | Push to feature/bugfix/hotfix | Dev plan when Terraform changes | ❌ |
 | PR validation      | pr-verify      | PR to main               | Dev plan      | Optional dev (label) |
-| Merge to main      | deploy-prd     | Push to main             | Dev+Prd apply | Dev+Prd              |
-| Weekly maintenance | deploy-prd     | Thursday 3am UTC         | Dev+Prd apply | Dev+Prd, health-gated |
+| Merge to main      | deploy-prd     | Push changing src, contract, or terraform | As needed | Dev+Prd, health-gated |
+| Weekly maintenance | deploy-prd     | Friday 5am UTC           | Dev+Prd apply | Dev+Prd, health-gated |
 | Manual promotion   | deploy-prd     | Manual dispatch          | Dev+Prd apply | Dev+Prd, health-gated |
 | Manual dev refresh | deploy-dev     | Manual dispatch          | Dev apply     | Dev                  |
-| Code quality       | codequality    | Monday 3am UTC + PR/push | ❌             | ❌                    |
+| Development teardown | destroy-development | Daily 23:45 UTC or manual dispatch | Dev destroy | ❌ |
+| Targeted teardown  | destroy-environment | Manual dispatch     | Dev or Prd destroy | ❌ |
+| Code quality       | codequality    | Monday 5:15am UTC + PR/push | ❌          | ❌                    |
 
 ## Environment Secrets
 
