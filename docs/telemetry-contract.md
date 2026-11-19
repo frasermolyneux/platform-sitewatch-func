@@ -76,6 +76,59 @@ The approved migration allowance is US$15/month incremental normal-operation pla
 Failures, restarts, execution time and telemetry volumes remain variable; do not silently remove
 coverage or move collection into status to enforce that allowance.
 
+### Status origin readiness: secured collector boundary
+
+Status origin readiness is an operational signal, not customer availability or a new public
+catalogue component. The canonical probe is `https://mxstatus.io/health/ready`, retaining
+`mxstatus.io` for both TLS SNI and the HTTP Host header with normal certificate validation.
+It requires no credentials or special headers. HTTP 200 (`{"status":"ready"}`) covers both
+configured brands. HTTP 503 with reason `stale-publication` means the publication exceeded its
+configured freshness limit (180 seconds by default); `publication-unavailable` means the
+publication is missing, invalid or unreadable. `/health/live` cannot detect stale publication.
+
+The 2026-11-19 investigation established the following boundary:
+
+| Origin | Address | Evidence |
+| ------ | ------- | -------- |
+| `ns346663` | `5.196.80.194` | Workstation HTTPS request pinned to this address returned 200 with certificate verification enabled. |
+| `ns5019527` | `15.235.119.97` | The equivalent workstation request timed out connecting to TCP 443; host-local TLS and Cloudflare probes succeed, as confirmed by the baremetal investigation. |
+
+The standby timeout is consistent with its **intentional Cloudflare-only ingress policy**,
+not evidence of a failed readiness response. The baremetal investigation verified that public
+Docker TCP 443 forwarding enters `PLATFORM-WEB`, which accepts Cloudflare IPv4 ranges and
+loopback before dropping other sources; UFW also restricts external HTTPS to Cloudflare.
+Status Caddy binds the public address; tailnet port 443 serves a different workload and is not
+an alternative status-origin route.
+
+Read-only Azure inspection confirmed that the production SiteWatch collectors in `uksouth`,
+`eastus` and `westeurope` are running Linux Flex Consumption apps without VNet integration
+(`virtualNetworkSubnetId` is null). No secured route from those collectors to the standby
+origin is declared. These observations do **not** constitute a successful Azure-origin
+connectivity test; direct collector reachability remains unverified. The current HTTP client
+also has no per-check dial-address override, so changing only the Host header or using the
+Cloudflare hostname would not prove which origin answered.
+
+Consequently, no direct-origin SiteWatch checks or associated Azure alerts are enabled.
+Do not open origin ingress to arbitrary Azure sources, use the public load-balanced URL as
+a substitute for per-origin monitoring, or disable TLS validation to bypass this blocker.
+Use the existing **Cloudflare load-balancer pool/origin health monitor** on its already
+permitted network path: HTTPS `/health/ready`, `mxstatus.io` Host/SNI, certificate validation
+enabled, expected HTTP 200, and no redirect-based success. Operational alerting must identify
+each unhealthy origin even when the other origin keeps the public site healthy; retain the
+existing sustained-failure policy and shared moderate/Sev2 routing for redundant-origin
+degradation. Cloudflare configuration and notification wiring belong to the owning
+baremetal/platform-monitoring repositories.
+
+If a secured Azure collector path is approved later, first prove TLS-validated readiness
+requests to **both origins from every collecting region**, without changing the configured
+hostname. Any dial-address implementation must validate literal IP configuration and preserve
+the URI hostname for Host, SNI and certificate validation without DNS/proxy/redirect fallback
+to another origin. Reserve site `ops` and matching app/component/check identities
+`ops.status-origin.ns346663` and `ops.status-origin.ns5019527`, using the regional `default`
+Application Insights target and shared moderate action group. These are prospective identities,
+not signals currently emitted, and must remain outside the public monitoring bindings and
+status catalogue. Validate the production Terraform plan before enabling such checks.
+
 ## Multi-target routing is unaffected
 
 Tests route to `default`, `platform`, `portal`, or `geolocation` Application Insights targets via
