@@ -3,6 +3,22 @@ namespace MX.Platform.SiteWatch.App.Tests;
 public sealed class ProductionMonitoringConfigurationTests
 {
     [Fact]
+    public void Forums_RetainsWebMonitoringWithoutTaskTrigger()
+    {
+        var configuration = File.ReadAllText(
+            Path.Combine(AppContext.BaseDirectory, "terraform", "tfvars", "prd.tfvars"));
+        var bindings = File.ReadAllText(
+            Path.Combine(AppContext.BaseDirectory, "contract", "status-monitoring-bindings.json"));
+
+        Assert.Contains("xi.sitewatch.forums-web", configuration, StringComparison.Ordinal);
+        Assert.Contains("xi.sitewatch.forums-web", bindings, StringComparison.Ordinal);
+        Assert.DoesNotContain("xi.sitewatch.forums-tasks", configuration, StringComparison.Ordinal);
+        Assert.DoesNotContain("www.xtremeidiots.com-tasks", configuration, StringComparison.Ordinal);
+        Assert.DoesNotContain("xtremeidiots_forums_task_key", configuration, StringComparison.Ordinal);
+        Assert.DoesNotContain("xi.sitewatch.forums-tasks", bindings, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void TalkWithTiles_UsesCanonicalUrlAndPreservesTelemetryIdentity()
     {
         var configuration = File.ReadAllText(
