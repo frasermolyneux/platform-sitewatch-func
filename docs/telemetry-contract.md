@@ -55,6 +55,11 @@ selects the latest native measurement per region rather than averaging a success
 regional live-status query. Verify complete regional observations before cutting over existing
 public coverage. A missing or stale measurement must never become a healthy observation.
 
+For retired checks, remove the binding and public catalogue entry from consumers before deploying
+the producer removal, so status does not continue expecting a measurement that has stopped. The
+forums task trigger must remain active until its replacement scheduler is ready and the cutover is
+coordinated. Its Key Vault secret remains managed here until replacement ownership is confirmed.
+
 ## Monitoring ownership and request budgets
 
 Sitewatch owns endpoint targets, collection, cadence and operational alerts as part of

@@ -155,16 +155,6 @@ availability_tests = [
     component    = "xi.sitewatch.forums-web"
   },
   {
-    workload     = "xtremeidiots-forums"
-    environment  = "prd"
-    app          = "www.xtremeidiots.com-tasks"
-    app_insights = "default"
-    uri          = "https://www.xtremeidiots.com/applications/core/interface/task/web.php?key=%xtremeidiots_forums_task_key%"
-    severity     = "high"
-    site         = "xi"
-    component    = "xi.sitewatch.forums-tasks"
-  },
-  {
     workload     = "xtremeidiots-redirect"
     environment  = "prd"
     app          = "redirect.xtremeidiots.net"
